@@ -3,6 +3,15 @@ const { timingSafeEqual } = require('node:crypto');
 const User = require('../models/User');
 const { asyncHandler } = require('../utils/http');
 
+/**
+ * Express middleware: require a valid session.
+ * Verifies the `session` cookie (HS256, issuer/audience pinned), checks the user
+ * still exists and that `sessionVersion` matches (so logout revokes tokens), and
+ * attaches `req.user` and `req.csrfToken`. For non-safe methods it also requires a
+ * matching `X-CSRF-Token` header (compared in constant time).
+ * Responds 401 (no/invalid session) or 403 (bad CSRF token) otherwise.
+ * @type {import('express').RequestHandler}
+ */
 exports.authenticateToken = asyncHandler(async (req, res, next) => {
   const token = req.cookies?.session;
   if (!token) return res.status(401).json({ message: 'Connexion requise.' });
@@ -36,6 +45,10 @@ exports.authenticateToken = asyncHandler(async (req, res, next) => {
   next();
 });
 
+/**
+ * Express middleware: allow only administrators. Must run after `authenticateToken`.
+ * @type {import('express').RequestHandler}
+ */
 exports.isAdmin = (req, res, next) => {
   if (req.user?.role !== 'admin') return res.status(403).json({ message: 'Accès interdit.' });
   next();

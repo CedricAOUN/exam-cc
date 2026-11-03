@@ -1,4 +1,12 @@
-// backend/models/Product.js
+/**
+ * @module models/Product
+ * Mongoose model for catalogue products.
+ * @typedef {Object} ProductDocument
+ * @property {string} name
+ * @property {number} price Unit price (>= 0).
+ * @property {string} description
+ * @property {number} stock Integer stock level (>= 0).
+ */
 const mongoose = require('mongoose');
 
 const productSchema = new mongoose.Schema(

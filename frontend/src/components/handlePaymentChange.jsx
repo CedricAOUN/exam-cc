@@ -1,5 +1,6 @@
 import { useCart } from '../context/CartContext';
 
+/** Payment method <select>; the choice is stored in the cart context. */
 const PaymentMethodSelection = () => {
   const { paymentMethod, dispatch } = useCart();
   const paymentOptions = ['Carte bancaire', 'PayPal', 'Virement'];

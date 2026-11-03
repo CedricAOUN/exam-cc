@@ -3,6 +3,10 @@ import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
+/**
+ * Login form: rejects empty fields client-side, shows server feedback, and
+ * redirects on success.
+ */
 const Login = () => {
   const [credentials, setCredentials] = useState({
     username: '',

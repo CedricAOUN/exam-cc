@@ -3,6 +3,10 @@ import React, { useEffect, useState } from 'react';
 import { fetchProducts } from '../services/api';
 import { useCart } from '../context/CartContext';
 
+/**
+ * Public catalogue (routes / and /products): handles loading, empty and error
+ * states and lets users add products to the cart.
+ */
 const ProductList = () => {
   const [products, setProducts] = useState([]);
   const [error, setError] = useState('');

@@ -8,6 +8,10 @@ import {
   updateProductStock,
 } from '../services/adminApi';
 
+/**
+ * Admin dashboard (route /admin, admin-only): lists all orders, lets the admin move
+ * each one through its valid status transitions, and edit product stock levels.
+ */
 const Admin = () => {
   const [orders, setOrders] = useState([]);
   const [products, setProducts] = useState([]);

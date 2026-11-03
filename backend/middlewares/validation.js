@@ -1,6 +1,12 @@
 const Joi = require('joi');
+/** Joi rule for a 24-character hexadecimal MongoDB ObjectId (lower-cased, required). */
 const id = Joi.string().hex().length(24).lowercase().required();
+/**
+ * Joi rule for a required, trimmed, non-empty string.
+ * @param {number} max Maximum length.
+ */
 const text = (max) => Joi.string().trim().min(1).max(max).required();
+/** Request body schemas for each endpoint (register, login, order, stock, status). */
 const schemas = {
   register: Joi.object({
     username: Joi.string()
@@ -47,6 +53,14 @@ const schemas = {
       .required(),
   }),
 };
+/**
+ * Build a middleware that validates `req[source]` against a Joi schema.
+ * Type coercion is disabled; on failure it responds 400 with the offending field
+ * paths, otherwise it replaces `req[source]` with the sanitised value.
+ * @param {import('joi').ObjectSchema} schema Schema to apply.
+ * @param {'body'|'params'|'query'} [source='body'] Request part to validate.
+ * @returns {import('express').RequestHandler}
+ */
 const validate =
   (schema, source = 'body') =>
   (req, res, next) => {

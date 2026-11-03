@@ -1,3 +1,7 @@
+/**
+ * Auth routes (mounted at /api/auth): login, register (both rate-limited to 20
+ * requests / 15 min / IP and validated), me, logout.
+ */
 const express = require('express');
 const { rateLimit } = require('express-rate-limit');
 const controller = require('../controllers/authController');

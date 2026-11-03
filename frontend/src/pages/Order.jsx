@@ -3,6 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { createOrder } from '../services/api';
 
+/**
+ * Order summary and submission page: shows the cart, address and chosen methods,
+ * then POSTs the order with an Idempotency-Key so retries cannot duplicate it.
+ */
 const Order = () => {
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);

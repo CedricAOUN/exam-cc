@@ -2,6 +2,10 @@ import React from 'react';
 import { useCart } from '../context/CartContext';
 import { useNavigate } from 'react-router-dom';
 
+/**
+ * Shopping cart page: change quantities (bounded by stock), remove items, and
+ * continue to shipping/payment.
+ */
 const Cart = () => {
   const { cart, dispatch } = useCart();
   const navigate = useNavigate();

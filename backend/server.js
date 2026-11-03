@@ -1,3 +1,7 @@
+/**
+ * Backend entry point: Express API for auth, products and orders.
+ * Exports `app` (used by tests) and `start`.
+ */
 require('dotenv').config();
 const { logger, requestLogger, fatal } = require('./logger');
 const express = require('express');
@@ -48,6 +52,10 @@ app.use((error, req, res, next) => {
     .status(error.status === 503 ? 503 : 500)
     .json({ message: 'Service indisponible. Réessayez plus tard.' });
 });
+/**
+ * Validate configuration, connect to MongoDB, build indexes, then start listening.
+ * @returns {Promise<import('http').Server>} The running HTTP server (port `PORT`, default 5000).
+ */
 async function start() {
   validateConfig();
   await connectDB();

@@ -4,6 +4,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 
+/**
+ * Top navigation bar: greeting, cart link with total item count, admin link for
+ * admins, and login/logout depending on the session.
+ */
 const Navbar = () => {
   const navigate = useNavigate();
   const { cart, dispatch } = useCart();

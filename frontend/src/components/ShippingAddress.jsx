@@ -1,6 +1,7 @@
 import React from 'react';
 import { useCart } from '../context/CartContext';
 
+/** Shipping address fields, kept in the shared cart state. */
 const ShippingAddress = () => {
   const { shippingAddress, dispatch } = useCart();
   // Keep the fields and order summary in sync through the shared cart state.

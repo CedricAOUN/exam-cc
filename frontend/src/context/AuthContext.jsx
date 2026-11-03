@@ -1,6 +1,11 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import client from '../services/client';
 const AuthContext = createContext();
+/**
+ * Provides the current user, `login` and `logout`. The session lives in an httpOnly
+ * cookie, so the user is restored from /auth/me on load; a 'session-expired' event
+ * (fired by the API client on 401) signs the user out.
+ */
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -47,4 +52,5 @@ export function AuthProvider({ children }) {
     </AuthContext.Provider>
   );
 }
+/** Hook returning the auth context (`user`, `loading`, `error`, `login`, `logout`). */
 export const useAuth = () => useContext(AuthContext);

@@ -13,7 +13,10 @@ import AdminRoute from './components/AdminRoute';
 import ShippingPayment from './pages/ShippingPayment';
 import RouteError from './components/RouteError';
 
-// Layout principal avec Navbar et Outlet
+/**
+ * Main layout: Navbar plus the matched child route in an Outlet.
+ * @returns {JSX.Element}
+ */
 const MainLayout = () => (
   <>
     <Navbar />
@@ -23,7 +26,11 @@ const MainLayout = () => (
   </>
 );
 
-// Définition des routes avec le MainLayout
+/**
+ * Route table. `shipping-payment` and `order` require login, `admin` requires
+ * the admin role; `shippig_payment` is a legacy typo redirect.
+ * @type {import('react-router-dom').RouteObject[]}
+ */
 export const appRoutes = [
   {
     path: '/',
@@ -77,6 +84,10 @@ export const appRoutes = [
 ];
 const router = createBrowserRouter(appRoutes);
 
+/**
+ * Application root: mounts the router.
+ * @returns {JSX.Element}
+ */
 const App = () => <RouterProvider router={router} />;
 
 export default App;

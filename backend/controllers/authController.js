@@ -5,8 +5,21 @@ const User = require('../models/User');
 const { cookieOptions } = require('../config/security');
 // Compare a real hash even for an unknown account, limiting username timing leaks.
 const dummyHash = bcrypt.hashSync('unavailable-account-password', 10);
+/**
+ * Strip a user document down to the fields safe to send to the browser.
+ * @param {import('../models/User')} user Mongoose user document.
+ * @returns {{id: string, username: string, role: string}} Public user profile.
+ */
 const publicUser = (user) => ({ id: user._id, username: user.username, role: user.role });
 
+/**
+ * POST /api/auth/login: verify credentials and open a session.
+ * Sets an httpOnly `session` JWT cookie (1 h) and returns a CSRF token that the
+ * client must echo in the `X-CSRF-Token` header on state-changing requests.
+ * @param {import('express').Request} req Body: `{ username, password }`.
+ * @param {import('express').Response} res 200 `{ user, csrfToken }` or 401.
+ * @returns {Promise<void>}
+ */
 exports.login = async (req, res) => {
   const { username, password } = req.body;
   const user = await User.findOne({ username }).select('+password');
@@ -28,13 +41,33 @@ exports.login = async (req, res) => {
   res.json({ user: publicUser(user), csrfToken });
 };
 
+/**
+ * POST /api/auth/register: create a standard (non-admin) account.
+ * The role is always forced to `user`; the password is hashed by the User model.
+ * @param {import('express').Request} req Body: `{ username, email, password }`.
+ * @param {import('express').Response} res 201 on success; duplicates yield 409 via the error handler.
+ * @returns {Promise<void>}
+ */
 exports.register = async (req, res) => {
   const { username, email, password } = req.body;
   await User.create({ username, email, password, role: 'user' });
   res.status(201).json({ message: 'Compte créé.' });
 };
 
+/**
+ * GET /api/auth/me: return the authenticated user and the session's CSRF token.
+ * @param {import('express').Request} req Requires `authenticateToken` (sets `req.user`).
+ * @param {import('express').Response} res 200 `{ user, csrfToken }`.
+ */
 exports.me = (req, res) => res.json({ user: publicUser(req.user), csrfToken: req.csrfToken });
+/**
+ * POST /api/auth/logout: end the session.
+ * Increments `sessionVersion` so every previously issued JWT is revoked, then
+ * clears the cookie.
+ * @param {import('express').Request} req Requires `authenticateToken`.
+ * @param {import('express').Response} res 204 No Content.
+ * @returns {Promise<void>}
+ */
 exports.logout = async (req, res) => {
   // Revoke existing sessions, including copied cookies, rather than just clearing the browser.
   await User.updateOne({ _id: req.user._id }, { $inc: { sessionVersion: 1 } });

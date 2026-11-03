@@ -3,6 +3,10 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import client from '../services/client';
 
+/**
+ * Registration form with client-side validation (empty fields, password length)
+ * and clear success/error feedback.
+ */
 const Register = () => {
   const [formData, setFormData] = useState({
     username: '',

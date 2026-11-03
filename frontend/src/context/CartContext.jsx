@@ -2,6 +2,10 @@ import React, { createContext, useContext, useReducer } from 'react';
 
 const CartContext = createContext();
 
+/**
+ * Pure reducer for the cart. Quantities are capped by product stock and out-of-stock
+ * products cannot be added. Also stores the shipping address and shipping/payment methods.
+ */
 export const cartReducer = (state, action) => {
   switch (action.type) {
     case 'ADD_TO_CART': {
@@ -65,6 +69,7 @@ export const cartReducer = (state, action) => {
   }
 };
 
+/** Provides cart state and `dispatch` to the app. */
 export const CartProvider = ({ children }) => {
   const [cartState, dispatch] = useReducer(cartReducer, {
     cart: [],
@@ -81,4 +86,5 @@ export const CartProvider = ({ children }) => {
   return <CartContext.Provider value={{ ...cartState, dispatch }}>{children}</CartContext.Provider>;
 };
 
+/** Hook returning the cart context (`cart`, `dispatch`, address and methods). */
 export const useCart = () => useContext(CartContext);

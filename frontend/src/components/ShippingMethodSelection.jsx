@@ -1,5 +1,6 @@
 import { useCart } from '../context/CartContext';
 
+/** Shipping method <select>; the choice is stored in the cart context. */
 const ShippingMethodSelection = () => {
   const { shippingMethod, dispatch } = useCart();
   const shippingOptions = [

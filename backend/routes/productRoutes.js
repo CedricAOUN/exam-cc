@@ -1,3 +1,6 @@
+/**
+ * Product routes (mounted at /api/products): public list, admin-only stock update.
+ */
 const express = require('express');
 const controller = require('../controllers/productController');
 const { authenticateToken, isAdmin } = require('../middlewares/authMiddleware');

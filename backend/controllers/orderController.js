@@ -6,6 +6,17 @@ const User = require('../models/User');
 const { fail } = require('../utils/http');
 const { notify } = require('../utils/notifications');
 
+/**
+ * POST /api/orders: create an order atomically.
+ * Runs in a MongoDB transaction: stock is decremented per item (failing with 409
+ * if insufficient) and prices are read from the database, never from the client.
+ * The required `Idempotency-Key` header makes retries safe: replaying the same key
+ * with the same payload returns the existing order (200); a different payload is a 409.
+ * A confirmation email is sent best-effort after commit.
+ * @param {import('express').Request} req Body: `{ items, shippingAddress, paymentMethod, shippingMethod }`.
+ * @param {import('express').Response} res 201 (created) or 200 (replayed) with `{ message, order }`.
+ * @returns {Promise<void>}
+ */
 exports.createOrder = async (req, res) => {
   const { items, shippingAddress, paymentMethod, shippingMethod } = req.body;
   const checkoutKey = req.get('Idempotency-Key');
@@ -72,11 +83,19 @@ exports.createOrder = async (req, res) => {
   res.status(result.replayed ? 200 : 201).json({ message: 'Commande créée.', order: result.order });
 };
 
+/**
+ * GET /api/orders: list orders, newest first (max 200).
+ * Admins see every order; other users only see their own.
+ * @param {import('express').Request} req Requires `authenticateToken`.
+ * @param {import('express').Response} res 200 array of orders.
+ * @returns {Promise<void>}
+ */
 exports.getOrders = async (req, res) => {
   const filter = req.user.role === 'admin' ? {} : { userId: req.user._id };
   res.json(await Order.find(filter).sort({ createdAt: -1 }).limit(200));
 };
 
+/** Allowed order status transitions: current status -> permitted next statuses. */
 const transitions = {
   'En attente': ['En cours de traitement', 'Annulée'],
   'En cours de traitement': ['Expédiée', 'Annulée'],
@@ -84,6 +103,16 @@ const transitions = {
   Délivrée: [],
   Annulée: [],
 };
+/**
+ * Move an order to a new status inside a transaction.
+ * Enforces ownership (non-admins only touch their own orders and may only cancel
+ * while `En attente`), validates the transition, and restores reserved stock
+ * exactly once on cancellation.
+ * @param {import('express').Request} req Uses `req.params.orderId` and `req.user`.
+ * @param {string} status Target status.
+ * @returns {Promise<{order: object, changed: boolean}>} `changed` is false if already in that status.
+ * @throws {Error} With `status` 404, 403 or 409 (see `utils/http.fail`).
+ */
 async function changeStatus(req, status) {
   return mongoose.connection.transaction(async (session) => {
     const filter = { _id: req.params.orderId };
@@ -112,6 +141,13 @@ async function changeStatus(req, status) {
     return { order, changed: true };
   });
 }
+/**
+ * Apply a status change, email the order owner if it changed, and reply with the order.
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {string} status Target status.
+ * @returns {Promise<void>}
+ */
 async function respondStatus(req, res, status) {
   const { order, changed } = await changeStatus(req, status);
   if (changed) {

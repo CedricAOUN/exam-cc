@@ -1,3 +1,8 @@
+/**
+ * Order routes (mounted at /api/orders); all require a session.
+ * GET / and POST / (needs an Idempotency-Key header) for any user; DELETE /:orderId
+ * cancels (owner or admin); PUT /:orderId/validate and /status are admin-only.
+ */
 const express = require('express');
 const controller = require('../controllers/orderController');
 const { authenticateToken, isAdmin } = require('../middlewares/authMiddleware');

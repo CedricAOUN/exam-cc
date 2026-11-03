@@ -5,6 +5,10 @@ import PaymentMethodSelection from '../components/handlePaymentChange';
 import ShippingAddress from '../components/ShippingAddress';
 import { useCart } from '../context/CartContext';
 
+/**
+ * Checkout step: collects the shipping address, shipping method and payment
+ * method before the order summary.
+ */
 const ShippingPayment = () => {
   const navigate = useNavigate();
   const { cart, shippingAddress, dispatch } = useCart();

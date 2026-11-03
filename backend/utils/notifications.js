@@ -1,5 +1,14 @@
 const axios = require('axios');
 const { logger } = require('../logger');
+/**
+ * Send an email through the gateway's notification service (best-effort).
+ * Does nothing without a recipient; delivery failures are logged without request
+ * details and never thrown, so a mail outage cannot roll back an order.
+ * @param {string|undefined} to Recipient address.
+ * @param {string} subject Email subject.
+ * @param {string} text Plain-text body.
+ * @returns {Promise<void>}
+ */
 exports.notify = async (to, subject, text) => {
   if (!to) return;
   try {

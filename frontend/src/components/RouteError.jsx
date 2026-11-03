@@ -1,6 +1,7 @@
 import { isRouteErrorResponse, Link, useRouteError } from 'react-router-dom';
 
 /** Show a safe recovery screen for unmatched URLs and route/render failures. */
+/** Fallback UI shown by the router when a page throws or the URL is unknown. */
 export default function RouteError() {
   const error = useRouteError();
   const notFound = isRouteErrorResponse(error) && error.status === 404;

@@ -1,6 +1,11 @@
 import axios from 'axios';
 import { API_BASE_URL } from './config';
 
+/**
+ * Shared axios instance: sends the session cookie, and attaches the CSRF token to
+ * every state-changing request (fetched from /auth/me if not yet known). A 401
+ * clears the token and signals the app that the session expired.
+ */
 const client = axios.create({ baseURL: API_BASE_URL, withCredentials: true, timeout: 10000 });
 let csrfToken;
 client.interceptors.request.use(async (config) => {

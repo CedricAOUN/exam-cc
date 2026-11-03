@@ -1,4 +1,7 @@
-// backend/seeder.js
+/**
+ * @file CLI seeder: replaces the Product collection with a fixed demo catalogue.
+ * Run with `node seeder.js`; requires `MONGO_URI` in the environment.
+ */
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const Product = require('./models/Product'); // Assurez-vous que le chemin est correct
