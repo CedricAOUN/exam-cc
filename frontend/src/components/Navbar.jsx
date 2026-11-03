@@ -10,6 +10,8 @@ const Navbar = () => {
   const { user, logout } = useAuth();
   const isAuthenticated = Boolean(user);
   const username = user?.username;
+
+  const cartQuantity = cart.reduce((total, item) => total + item.quantity, 0);
   const handleLogout = async () => {
     try {
       await logout();
@@ -35,9 +37,9 @@ const Navbar = () => {
         {/* Lien vers le Panier avec le nombre d'articles */}
         <Link to="/cart" className="relative">
           <span>Panier</span>
-          {cart.length > 0 && (
-            <span className="absolute top-0 right-0 bg-red-500 text-white rounded-full text-xs px-2">
-              {cart.length}
+          {cartQuantity > 0 && (
+            <span className="bg-red-500 text-white rounded-full text-xs ml-1 px-2">
+              {cartQuantity}
             </span>
           )}
         </Link>
