@@ -1,4 +1,5 @@
 require('dotenv').config();
+const { logger, requestLogger, fatal } = require('./logger');
 const express = require('express');
 const helmet = require('helmet');
 const mongoose = require('mongoose');
@@ -15,6 +16,7 @@ const Product = mongoose.model(
   ),
   'products',
 );
+app.use(requestLogger);
 app.disable('x-powered-by');
 app.use(helmet());
 app.get('/health', (req, res) => {
@@ -46,14 +48,16 @@ app.post('/update-stock', async (req, res, next) => {
 app.use((req, res) => res.status(404).json({ message: 'Route not found.' }));
 app.use((error, req, res, next) => {
   if (res.headersSent) return next(error);
+  logger.warn('Request could not be processed', { errorName: error.name });
   const status =
     error.type === 'entity.too.large' ? 413 : error.type === 'entity.parse.failed' ? 400 : 503;
   res.status(status).json({ message: 'Stock request failed.' });
 });
 mongoose
   .connect(process.env.MONGO_URI, { serverSelectionTimeoutMS: 10000 })
-  .then(() => app.listen(process.env.PORT || 4003, () => console.log('Stock service ready')))
-  .catch(() => {
-    console.error('Stock database connection failed.');
-    process.exit(1);
-  });
+  .then(() =>
+    app.listen(process.env.PORT || 4003, () =>
+      logger.info('Stock service ready', { port: Number(process.env.PORT || 4003) }),
+    ),
+  )
+  .catch((error) => fatal('Stock database connection failed.', error));

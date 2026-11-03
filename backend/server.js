@@ -1,4 +1,5 @@
 require('dotenv').config();
+const { logger, requestLogger, fatal } = require('./logger');
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -7,6 +8,7 @@ const mongoose = require('mongoose');
 const { origins, validateConfig } = require('./config/security');
 const connectDB = require('./config/db');
 const app = express();
+app.use(requestLogger);
 app.disable('x-powered-by');
 if (process.env.TRUST_PROXY) app.set('trust proxy', process.env.TRUST_PROXY);
 app.use(helmet());
@@ -41,7 +43,7 @@ app.use((error, req, res, next) => {
     return res.status(413).json({ message: 'Requête trop volumineuse.' });
   if (error.status && error.status < 500)
     return res.status(error.status).json({ message: error.message });
-  console.error('Request failed', { name: error.name, code: error.code });
+  logger.error('Request failed', { errorName: error.name, errorCode: error.code });
   res
     .status(error.status === 503 ? 503 : 500)
     .json({ message: 'Service indisponible. Réessayez plus tard.' });
@@ -55,11 +57,12 @@ async function start() {
     require('./models/Product').init(),
     require('./models/Order').init(),
   ]);
-  return app.listen(process.env.PORT || 5000, () => console.log('API ready'));
+  return app.listen(process.env.PORT || 5000, () =>
+    logger.info('API ready', { port: Number(process.env.PORT || 5000) }),
+  );
 }
 if (require.main === module)
   start().catch((error) => {
-    console.error('API startup failed', { name: error.name });
-    process.exit(1);
+    fatal('API startup failed', error);
   });
 module.exports = { app, start };

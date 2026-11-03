@@ -1,4 +1,5 @@
 const axios = require('axios');
+const { logger } = require('../logger');
 exports.notify = async (to, subject, text) => {
   if (!to) return;
   try {
@@ -12,6 +13,6 @@ exports.notify = async (to, subject, text) => {
     );
   } catch {
     // Never log request configs: they contain service credentials and personal data.
-    console.warn('Notification delivery failed; the database change remains committed.');
+    logger.warn('Notification delivery failed; the database change remains committed.');
   }
 };

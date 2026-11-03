@@ -89,6 +89,7 @@ separate from this focused follow-up.
 Verified on 2026-11-03:
 
 - Backend validation and configuration checks: passed (5 cases).
+- Winston logging checks: passed (3 cases: safe metadata, levels, and fatal flush).
 - Frontend regression tests: passed (21 cases).
 - Docker integration suite: passed (14 scenarios plus the enclosing suite).
 - Project-wide lint and formatting checks: passed.
@@ -136,8 +137,9 @@ The scoped minimatch override moves ESLint/config-array from vulnerable 10.x to
    only on localhost.
 2. Configure CI/CD and run lint, unit tests, and isolated integration checks there.
    Container image/OS vulnerability scanning is separate from `npm audit`.
-3. Add structured centralized logs, audit trails, monitoring, and alert delivery.
-   The current fix removes sensitive logs but does not implement those services.
+3. Centralize the structured Winston logs and add audit trails, monitoring, and
+   alert delivery. Local Node-service logging is implemented; remote log storage,
+   retention, and operational dashboards remain deployment work.
 4. Use a shared rate-limit store when running more than one API instance; current
    counters live in one process and reset on restart.
 5. Add durable notification delivery/retries if email delivery must be guaranteed.

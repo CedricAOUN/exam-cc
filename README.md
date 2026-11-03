@@ -117,6 +117,32 @@ API endpoint, set `VITE_API_BASE_URL` when starting/building the frontend, and
 configure CORS/origins and the deployed CSP accordingly. The default relative
 `/api` works for both Vite and Docker.
 
+## Logging
+
+The backend, gateway, notifications, and stock service use
+[Winston](https://github.com/winstonjs/winston). JSON logs go to stdout (errors to
+stderr), so Docker collects them without writable log files inside containers.
+Each entry has a timestamp, service name, level, and message. HTTP completion logs
+include method, route template, status, and duration in milliseconds. Successful
+health checks are omitted; failed health checks are recorded.
+
+```bash
+docker compose logs -f backend gateway notifications stock-management
+docker compose logs --since 10m backend
+```
+
+Set `LOG_LEVEL=info` in the root `.env` to control the minimum level (`error`,
+`warn`, `info`, `http`, `verbose`, `debug`, or `silly`); the default is `info`.
+Recreate the Node containers after changing it, or restart host-side Node
+processes. Invalid level names fall back to `info`.
+
+Logging records operational metadata rather than request bodies, headers, query
+strings, raw URLs, credentials, email contents, or error stacks. Unknown metadata
+fields are discarded. Pass static messages and approved metadata to the logger;
+never interpolate secrets into a message. The seeder also uses Winston and drains
+its output before finishing. Central log storage, retention, and alerting remain
+separate deployment work.
+
 ## Checks
 
 ```bash

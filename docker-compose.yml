@@ -31,6 +31,7 @@ services:
     ports:
       - '127.0.0.1:5000:5000'
     environment:
+      LOG_LEVEL: ${LOG_LEVEL:-info}
       PORT: 5000
       MONGO_URI: mongodb://mongo:27017/exam1Db?replicaSet=rs0
       JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in the root .env (see .env.example)}
@@ -54,6 +55,7 @@ services:
       - '127.0.0.1:8000:8000'
     environment:
       SERVICE_TOKEN: ${SERVICE_TOKEN:?Set SERVICE_TOKEN in the root .env}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
       GATEWAY_PORT: 8000
       NOTIFI_SERVICE_URL: http://notifications:4002
       STOCK_SERVICE_URL: http://stock-management:4003
@@ -71,6 +73,7 @@ services:
       - '127.0.0.1:4002:4002'
     environment:
       SERVICE_TOKEN: ${SERVICE_TOKEN:?Set SERVICE_TOKEN in the root .env}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
       NOTIFI_PORT: 4002
       EMAIL_USER: ${EMAIL_USER:-}
       EMAIL_APPLICATION_PASSWORD: ${EMAIL_APPLICATION_PASSWORD:-}
@@ -80,6 +83,7 @@ services:
   stock-management:
     build: ./microservices/stock-management
     environment:
+      LOG_LEVEL: ${LOG_LEVEL:-info}
       SERVICE_TOKEN: ${SERVICE_TOKEN:?Set SERVICE_TOKEN in the root .env}
       MONGO_URI: mongodb://mongo:27017/exam1Db?replicaSet=rs0
     depends_on:

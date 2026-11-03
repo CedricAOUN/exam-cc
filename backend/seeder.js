@@ -5,14 +5,7 @@ const Product = require('./models/Product'); // Assurez-vous que le chemin est c
 
 dotenv.config();
 
-// Connexion à MongoDB
-mongoose
-  .connect(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
-  .then(() => console.log('MongoDB connecté pour le seed'))
-  .catch((err) => console.error('Erreur de connexion à MongoDB', err));
+const { logger } = require('./logger');
 
 // Jeux de produits à insérer
 const products = [
@@ -51,17 +44,21 @@ const products = [
 // Fonction pour insérer les produits
 const seedProducts = async () => {
   try {
+    await mongoose.connect(process.env.MONGO_URI, { serverSelectionTimeoutMS: 10000 });
+    logger.info('Seed database connected');
     // Supprimer les anciens produits (optionnel)
     await Product.deleteMany();
 
     // Insérer les nouveaux produits
     await Product.insertMany(products);
 
-    console.log('Jeux de produits insérés avec succès !');
-    process.exit();
+    logger.info('Sample products inserted', { productCount: products.length });
   } catch (error) {
-    console.error("Erreur lors de l'insertion des produits", error);
-    process.exit(1);
+    logger.error('Product seed failed', { errorName: error.name });
+    process.exitCode = 1;
+  } finally {
+    await mongoose.disconnect();
+    logger.end();
   }
 };
 

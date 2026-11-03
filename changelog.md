@@ -2,6 +2,20 @@
 
 ## 2026-11-03
 
+### Winston operational logging
+
+- Replaced console logging in the backend, gateway, notification service, stock
+  service, and product seeder with Winston JSON logging.
+- Added service/timestamp/level fields, status-aware HTTP completion logs, and
+  route-template/duration metadata; skipped successful health-check noise.
+- Restricted metadata to operational fields, excluding bodies, headers, queries,
+  credentials, notification contents, and raw error objects/stacks.
+- Added configurable LOG_LEVEL in the environment example and Compose settings.
+- Drained fatal startup and seeder logs before process exit; the seeder now waits
+  for its database connection before performing its existing product replacement.
+- Verified log privacy, level filtering, fatal-log flushing, lint, formatting,
+  and the existing 14-scenario isolated integration suite. Updated README usage.
+
 ### Focused E28 verification
 
 - Added tests rejecting missing/short/example JWT and service secrets and missing
