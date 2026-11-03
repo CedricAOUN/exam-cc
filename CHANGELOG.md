@@ -2,6 +2,24 @@
 
 ## 2026-11-03
 
+### Deployment (Render)
+
+- Deployed the application on Render using `render.yaml`; the frontend is live at
+  https://exam1-frontend-9nrk.onrender.com/ (HTTP 200, served over HTTPS with the
+  TLS certificate managed by Render).
+- Deployment is driven by the CI/CD pipeline (`.github/workflows/ci.yml`: install,
+  lint/test/audit, integration, image build and push, deploy).
+- Uptime Kuma is available locally as an optional Compose profile (`monitoring`).
+
+### JSDoc documentation
+
+- Added JSDoc to backend controllers, middlewares, routes, utilities, configuration,
+  Mongoose models (with typedefs) and the seeder.
+- Documented frontend components, contexts, pages, route table, entry point and the
+  API service modules (`api.js`, `adminApi.js`, `config.js`).
+- Comments only; no behaviour change. Formatting check and model loading verified.
+- Renamed `changelog.md` to `CHANGELOG.md`.
+
 ### Winston operational logging
 
 - Replaced console logging in the backend, gateway, notification service, stock

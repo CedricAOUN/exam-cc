@@ -4,6 +4,8 @@ This is one Git repository. The application contains a React frontend, Express
 backend, gateway, notification service, stock service, and MongoDB. The empty
 `microservices/auth-gateway/index.js` is an unused placeholder.
 
+Live deployment (Render, HTTPS): https://exam1-frontend-9nrk.onrender.com/
+
 ## Run with Docker
 
 Requires Docker and Docker Compose **2.24.4 or later** (the isolated test stack
