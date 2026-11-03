@@ -62,3 +62,11 @@ test('unexpected route render errors show recovery controls without a stack trac
     errorLog.mockRestore();
   }
 });
+
+test('product names containing HTML/JS remain text rather than executable markup', async () => {
+  const name = '<img src=x onerror="alert(\'test\')">';
+  fetchProducts.mockResolvedValue({ data: [{ _id: 'p1', name, price: 10, stock: 1 }] });
+  open('/products');
+  expect(await screen.findByText(name)).toBeInTheDocument();
+  expect(document.querySelector('img')).toBeNull();
+});

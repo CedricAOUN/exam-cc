@@ -62,13 +62,35 @@ impact; it is not a formal CVSS score.
   Node 22.22.2+ (or 24.15+/26+); Docker uses the Node 22 image.
 - The empty auth-gateway remains unused; its locked dependencies were patched too.
 
+## Focused E27/E28 follow-up
+
+The supplied task-oriented checklist is applied to this repository's products,
+cart, orders, and stock routes. No task service or unrelated architecture was added.
+
+| Exam check                                 | Result and evidence                                                                                                                                                                                                  |
+| ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Account creation and login                 | Empty submissions are blocked; duplicate/rejected-account messages are inline; registration success is visible on login. Pending submissions cannot be repeated. Emails are normalized before submission.            |
+| Cart add/update/remove                     | Interaction tests verify addition, quantity changes bounded by stock, removal, and clearing in the rendered UI.                                                                                                      |
+| Empty shipping forms and checkout feedback | Required/bounded fields block incomplete addresses; whitespace-only addresses and empty carts cannot advance. Failed checkout retains the cart and retry key; success clears the cart.                               |
+| Product loading and page errors            | Public catalogue routes, loading/empty/error states, invalid API responses, unknown URLs, and route-render recovery are covered.                                                                                     |
+| HTML/JS input                              | Direct HTTP registration with `alert('test')`, script tags, and event-handler markup is rejected. Product names, checkout address text, and error messages display literal text without creating script/image nodes. |
+| PUT/DELETE authorization                   | HTTP tests reject anonymous stock/order writes, reject non-admin status/stock edits, and prevent cross-user cancellation.                                                                                            |
+| JWT/service secret strength                | Unit tests reject missing, short, and example secrets and missing database configuration. Existing session tests cover forged/expired cookies and role changes.                                                      |
+| CORS                                       | HTTP tests verify configured-origin credentials/preflight, absence of allow-origin for an untrusted origin, and rejection of hostile/null-origin writes.                                                             |
+| Dependencies                               | Full `npm audit` rechecked in all seven package directories: zero reported advisories; no additional dependency changes were needed for this follow-up.                                                              |
+
+These are automated DOM and real HTTP/database checks. Browser-based visual
+acceptance and screenshots remain part of the final exam evidence collection.
+Deployment choices, logging/monitoring, and the wider E29 documentation work are
+separate from this focused follow-up.
+
 ## Verification
 
 Verified on 2026-11-03:
 
-- Backend validation checks: passed (3 cases).
-- Frontend regression tests: passed (5 cases).
-- Docker integration suite: passed (11 scenarios plus the enclosing suite).
+- Backend validation and configuration checks: passed (5 cases).
+- Frontend regression tests: passed (21 cases).
+- Docker integration suite: passed (14 scenarios plus the enclosing suite).
 - Project-wide lint and formatting checks: passed.
 - Frontend production build and all Docker application builds: passed.
 - Local Compose deployment: all six services healthy, with real email disabled.

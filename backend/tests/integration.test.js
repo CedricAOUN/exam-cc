@@ -516,6 +516,81 @@ test(
         );
         assert.equal((await request('/api/auth/me', { auth: ownerAuth })).status, 401);
       });
+      await t.test(
+        'empty forms and HTML/JS registration input are rejected through HTTP',
+        async () => {
+          for (const path of ['/api/auth/register', '/api/auth/login']) {
+            assert.equal((await request(path, { method: 'POST', body: {} })).status, 400);
+          }
+          for (const username of [
+            "alert('test')",
+            "<script>alert('test')</script>",
+            '<img src=x onerror=alert(1)>',
+          ]) {
+            assert.equal(
+              (
+                await request('/api/auth/register', {
+                  method: 'POST',
+                  body: { username, email: 'injection@example.invalid', password },
+                })
+              ).status,
+              400,
+            );
+          }
+          assert.equal(await User.countDocuments({ email: 'injection@example.invalid' }), 0);
+        },
+      );
+      await t.test(
+        'CORS permits the configured UI and refuses hostile browser writes',
+        async () => {
+          const allowed = await request('/api/products', {
+            headers: { Origin: 'http://localhost:3000' },
+          });
+          assert.equal(allowed.status, 200);
+          assert.equal(allowed.headers.get('access-control-allow-origin'), 'http://localhost:3000');
+          assert.equal(allowed.headers.get('access-control-allow-credentials'), 'true');
+          const denied = await request('/api/products', {
+            headers: { Origin: 'https://evil.invalid' },
+          });
+          assert.equal(denied.headers.get('access-control-allow-origin'), null);
+          const preflight = await request('/api/orders', {
+            method: 'OPTIONS',
+            headers: {
+              Origin: 'http://localhost:3000',
+              'Access-Control-Request-Method': 'POST',
+              'Access-Control-Request-Headers': 'content-type,x-csrf-token',
+            },
+          });
+          assert.equal(preflight.status, 204);
+          assert.equal(
+            preflight.headers.get('access-control-allow-origin'),
+            'http://localhost:3000',
+          );
+          for (const Origin of ['https://evil.invalid', 'null']) {
+            assert.equal(
+              (
+                await request('/api/auth/register', {
+                  method: 'POST',
+                  headers: { Origin },
+                  body: {},
+                })
+              ).status,
+              403,
+            );
+          }
+        },
+      );
+      await t.test('all order and stock mutation endpoints reject anonymous requests', async () => {
+        const id = 'aaaaaaaaaaaaaaaaaaaaaaaa';
+        for (const [method, path] of [
+          ['PUT', `/api/orders/${id}/status`],
+          ['PUT', `/api/orders/${id}/validate`],
+          ['DELETE', `/api/orders/${id}`],
+          ['PUT', `/api/products/${id}/stock`],
+        ]) {
+          assert.equal((await request(path, { method, body: {} })).status, 401);
+        }
+      });
       await t.test('authentication attempts are rate-limited', async () => {
         let blocked = false;
         for (let attempt = 0; attempt < 25; attempt++) {

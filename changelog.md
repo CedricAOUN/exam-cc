@@ -2,6 +2,19 @@
 
 ## 2026-11-03
 
+### Focused E28 verification
+
+- Added tests rejecting missing/short/example JWT and service secrets and missing
+  database configuration, plus empty form and HTML/JS username validation checks.
+- Extended isolated HTTP tests to verify empty/injected registration payloads,
+  configured-origin CORS credentials/preflight, hostile/null-origin write rejection,
+  and anonymous PUT/DELETE denial on order and stock routes.
+- Confirmed HTML/JS product names, address text, and error messages render as text.
+- All five backend validation/configuration cases, 21 frontend tests, and 14
+  integration scenarios pass; lint, formatting, and frontend build pass.
+- Rechecked all seven package directories with npm audit: zero known advisories.
+- Updated the audit report with evidence mapped to the supplied E27/E28 checklist.
+
 ### Focused E27 form and cart checks
 
 - Required empty login/registration fields and added one inline error message,

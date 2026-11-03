@@ -36,3 +36,20 @@ test('stock accepts numeric zero and rejects fractions, strings and negative val
   for (const stock of ['0', -1, 1.2, null, {}, 1000001])
     assert.ok(check(schemas.stock, { stock }).error);
 });
+test('empty forms and HTML/JavaScript usernames are rejected', () => {
+  for (const schema of Object.values(schemas)) {
+    assert.ok(check(schema, {}).error);
+    assert.ok(check(schema, undefined).error);
+  }
+  const valid = { username: 'tester', email: 'test@example.com', password: 'A-long-password-123' };
+  for (const username of [
+    '',
+    '   ',
+    "alert('test')",
+    "<script>alert('test')</script>",
+    '<img src=x onerror=alert(1)>',
+  ]) {
+    assert.ok(check(schemas.register, { ...valid, username }).error);
+  }
+  assert.ok(check(schemas.login, { username: '   ', password: 'password' }).error);
+});
