@@ -6,12 +6,25 @@ import { useCart } from '../context/CartContext';
 const ProductList = () => {
   const [products, setProducts] = useState([]);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
   const { dispatch } = useCart();
 
   useEffect(() => {
+    let active = true;
     fetchProducts()
-      .then((response) => setProducts(response.data))
-      .catch(() => setError('Impossible de charger les produits.'));
+      .then((response) => {
+        if (!Array.isArray(response.data)) throw new Error('Invalid products response');
+        if (active) setProducts(response.data);
+      })
+      .catch(() => {
+        if (active) setError('Impossible de charger les produits.');
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
   }, []);
 
   const addToCart = (product) => {
@@ -24,7 +37,11 @@ const ProductList = () => {
   return (
     <div className="p-8">
       <h2 className="text-2xl font-bold mb-4">Liste des Produits</h2>
+      {loading && <p role="status">Chargement des produits...</p>}
       {error && <p role="alert">{error}</p>}
+      {!loading && !error && products.length === 0 && (
+        <p>Aucun produit disponible pour le moment.</p>
+      )}
       <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {products.map((product) => (
           <li key={product._id} className="border p-4 rounded shadow">

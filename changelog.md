@@ -2,6 +2,16 @@
 
 ## 2026-11-03
 
+### Products page routing and error recovery
+
+- Added the missing `/products` route while keeping the catalogue at `/`.
+- Added a custom route error boundary for unknown URLs and rendering failures,
+  with recovery links and no exposed internal error details.
+- Added loading, empty-catalogue, and invalid-response handling to the products page.
+- Verified public catalogue access, empty/error responses, custom 404 handling,
+  and render-error recovery with seven regression cases. All 12 frontend tests,
+  frontend lint, and the production build pass.
+
 ### Investigation
 
 - Reviewed the repository layout, package scripts, environment configuration,

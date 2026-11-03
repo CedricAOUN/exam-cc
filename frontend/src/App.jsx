@@ -11,6 +11,7 @@ import Admin from './pages/Admin';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/AdminRoute';
 import ShippingPayment from './pages/ShippingPayment';
+import RouteError from './components/RouteError';
 
 // Layout principal avec Navbar et Outlet
 const MainLayout = () => (
@@ -23,15 +24,17 @@ const MainLayout = () => (
 );
 
 // Définition des routes avec le MainLayout
-const router = createBrowserRouter([
+export const appRoutes = [
   {
     path: '/',
     element: <MainLayout />,
+    errorElement: <RouteError />,
     children: [
       {
-        path: '',
+        index: true,
         element: <ProductList />,
       },
+      { path: 'products', element: <ProductList /> },
       {
         path: 'login',
         element: <Login />,
@@ -71,7 +74,8 @@ const router = createBrowserRouter([
       },
     ],
   },
-]);
+];
+const router = createBrowserRouter(appRoutes);
 
 const App = () => <RouterProvider router={router} />;
 
