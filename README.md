@@ -1,123 +1,143 @@
-# Local bug testing
+# MERN shop exam project
 
-This is one Git repository rooted in this directory. `frontend/`, `backend/`,
-`gateway/`, and `microservices/` are regular folders, not submodules or separate
-repositories. Open this root folder in your editor and run Git commands here.
-Each service keeps its own package.json and lockfile for independent dependency
-installation and future Docker builds; that does not make it a separate Git repo.
-The root `docker-compose.yml` coordinates the services.
+This is one Git repository. The application contains a React frontend, Express
+backend, gateway, notification service, stock service, and MongoDB. The empty
+`microservices/auth-gateway/index.js` is an unused placeholder.
 
-The app uses React on port 3000 and an Express API on port 5000.
-The gateway runs on 8000, notifications on 4002, and the stock service on 4003.
-The separate auth-gateway folder is an unused placeholder.
+## Run with Docker
 
-## Run everything with Docker
+Requires Docker and Docker Compose **2.24.4 or later** (the isolated test stack
+uses Compose's `!reset` syntax). Node.js is not required on the host.
 
-Prerequisites: Docker Engine (or Docker Desktop) and Docker Compose v2 or later.
-Node.js is not required on the host.
-
-1. Copy `.env.example` to `.env` (preserve any existing local configuration).
-2. Set `JWT_SECRET` to a random value, for example using `openssl rand -hex 32`.
-3. Start the stack from this directory:
+1. Copy `.env.example` to `.env`, preserving any existing configuration.
+2. Generate **two independent secrets**, using `openssl rand -hex 32` twice, and
+   set `JWT_SECRET` and `SERVICE_TOKEN`. Each must be at least 32 characters.
+3. Start the stack:
 
 ```bash
 docker compose up --build -d --wait
 ```
 
-Open http://localhost:3000. Nginx serves the production React bundle, handles
-client-side routes, and proxies `/api` to the backend. The frontend uses relative
-API URLs in Docker, so it also works when accessed from another computer.
-For local React development the default API remains http://localhost:5000/api;
-`REACT_APP_API_BASE_URL` can override it at build/start time.
-
-Compose starts MongoDB, notifications, stock management, gateway, backend, and
-frontend in dependency order, waiting for health checks. Backend readiness also
-checks the database connection. Internal calls use Compose service names.
-API/debug ports 5000, 8000, 4002, 4003 and MongoDB port 27018 are bound to
-localhost; the UI is exposed on port 3000. Stop local Node processes before
-starting Docker to avoid port conflicts. The empty `auth-gateway/index.js` is an
-unused placeholder, with no server to run.
-
-Compose reads the root `.env`, not service-local environment files. Gmail
-credentials are optional and default to empty. Without them, notification requests
-fail and checkout logs that failure while still saving the order. The existing
-hardcoded checkout email recipient remains in `backend/controllers/orderController.js`.
-Credentials are excluded from every image build context; application Node
-containers run as the non-root `node` user with production dependencies.
+Open http://localhost:3000. Nginx serves the production React build, handles SPA
+routes, and proxies `/api` to the backend. Set `ALLOWED_ORIGINS` to the exact UI
+origins when accessing the app using a different hostname. The default includes
+`http://localhost:3000` and `http://127.0.0.1:3000`.
 
 ```bash
-docker compose ps                    # service health
-docker compose logs -f              # follow logs
-docker compose down                 # stop and remove containers, keep data
-docker compose up --build -d --wait  # rebuild after code changes
+docker compose ps
+docker compose logs -f
+docker compose down                 # stop containers, preserve database
+docker compose up --build -d --wait  # apply source/config changes
 ```
 
-MongoDB 8.0 uses `GLIBC_TUNABLES=glibc.pthread.rseq=1` for compatibility with
-newer Linux kernels; see the [MongoDB image issue](https://github.com/docker-library/mongo/issues/765).
-MongoDB data persists in the `mongo-data` named volume. `docker compose down -v`
-**deletes that database**. A database from an older container or a host MongoDB
-installation is not automatically migrated to this new volume.
+API/debug ports 5000 (backend), 8000 (gateway), 4002 (notifications), 4003 (stock),
+and 27018 (MongoDB) are bound to localhost. Only the UI on port 3000 is publicly
+bound. Internal endpoints require `X-Service-Token`; browser clients use the
+backend API and never receive that secret. Stop host Node processes before
+starting Docker to avoid port conflicts.
 
-Optional sample data (**replaces all products**):
+Compose reads the root `.env` and explicitly supplies container settings; it does
+not use service-local `.env` files. Application Node containers run as non-root
+with production dependencies, and secrets are excluded from image build contexts.
+
+MongoDB runs as a **single-node development replica set**, enabling atomic order
+and stock transactions. Health checks initialize it and wait for a writable
+primary. Existing named-volume data is preserved when enabling the replica set.
+MongoDB uses `GLIBC_TUNABLES=glibc.pthread.rseq=1` for the
+[kernel compatibility workaround](https://github.com/docker-library/mongo/issues/765).
+Data persists in `mongo-data`; **`docker compose down -v` deletes it**. Data from
+older anonymous volumes or host MongoDB installations is not automatically migrated.
+
+This Compose setup is for local development/preproduction validation. Before an
+internet deployment, configure HTTPS and `COOKIE_SECURE=true`, restrict network
+access, and provision authenticated MongoDB with backups and appropriate secrets
+management. Production hosting and monitoring are separate exam tasks.
+
+## Accounts, checkout, and notifications
+
+Register through the UI with a username of 3-40 letters/digits/underscores/hyphens,
+a lowercase email address, and a password of 12-72 characters (maximum 72 UTF-8
+bytes). Registration always creates a `user`. No administrator account is seeded;
+use the administrator credentials/database dump supplied for the exam.
+
+Login stores a one-hour JWT in an HttpOnly, SameSite cookie. The frontend checks
+`GET /api/auth/me` to restore the session. Authenticated writes require the
+session's `X-CSRF-Token`. Logout revokes all existing sessions for that user.
+Old localStorage credentials are removed; log in again after upgrading.
+
+Checkout sends product IDs and integer quantities; prices and totals are
+calculated from MongoDB. Each attempt includes an `Idempotency-Key`, retained by
+the UI for retries of the same payload. Retrying the same key returns the same
+order without deducting stock again. Reusing it with different data returns 409.
+Orders and stock reservations commit together. Cancellations retain order history
+and restore reserved stock once; legacy orders without reservations do not add
+stock on cancellation.
+
+Users can list their own orders and cancel their own pending orders. Admins can
+list all orders, validate them, update status, cancel pending/processing orders,
+and set product stock (including zero) through the stock service. Supported status
+transitions are pending -> processing -> shipped -> delivered, or cancellation
+before shipment. In French: `En attente`, `En cours de traitement`, `Expédiée`,
+`Délivrée`, `Annulée`.
+
+Email is optional. Without both `EMAIL_USER` and `EMAIL_APPLICATION_PASSWORD`, the
+notification service validates requests and returns 202 with `delivered: false`.
+Configure Gmail application credentials to enable real delivery. Order emails go
+to the account's email, and stock emails go to optional `NOTIFICATION_EMAIL`.
+Notification failures never roll back a completed database operation. Email is
+best effort; durable retries/outbox delivery are not yet implemented.
+
+Optional sample data (**deletes and replaces all products**):
 
 ```bash
 docker compose exec backend node seeder.js
 ```
 
-Register a user in the UI, then log in and test products, cart, and checkout.
-No admin account is seeded. The stock service currently only logs updates, and
-the checkout stock call remains commented out.
+Use the seeder only on a disposable database without live orders.
 
-## First setup for local Node development
+## Host-side Node development
 
-Run from the repository root:
+Requires Node.js **22.22.2+ (or 24.15+/26+)**. Keep the same secrets and local service URLs in the
+root `.env`; root startup scripts load that file before any service-local values.
+Start only the database to avoid conflicting ports:
 
 ```bash
 npm ci
 npm run install:all
 npm run db:start
+EMAIL_USER= EMAIL_APPLICATION_PASSWORD= MONGO_URI='mongodb://127.0.0.1:27018/exam1Db?replicaSet=rs0&directConnection=true' npm run start:all
 ```
 
-`db:start` starts only MongoDB from Compose, exposed on localhost:27018.
-The root `.env` must include `JWT_SECRET` for Compose configuration validation.
+`npm run run:all` is an alias. Ctrl+C stops the application processes; stop the
+database with `docker compose stop mongo`. A standalone MongoDB instance cannot
+run transactional checkout; use a replica set.
 
-## Start all application services
+Vite serves React on port 3000 and proxies `/api` to host port 5000. For a custom
+API endpoint, set `VITE_API_BASE_URL` when starting/building the frontend, and
+configure CORS/origins and the deployed CSP accordingly. The default relative
+`/api` works for both Vite and Docker.
+
+## Checks
 
 ```bash
-MONGO_URI=mongodb://127.0.0.1:27018/exam1Db npm run run:all
+npm test                   # backend validation and frontend regression tests
+npm run lint               # all server sources and frontend
+npm run format:check       # Prettier
+npm run test:integration    # isolated Docker stack and full HTTP/DB regression suite
 ```
 
-Open http://localhost:3000. `npm run start:all` is an alias for the same launch.
-Press Ctrl+C to stop the application services. MongoDB stays running; stop it
-with `docker compose stop mongo`.
+Integration tests use the separate `exam1-audit-test` Compose project, no published
+host ports, a separate database, and disabled email. They cover cookie sessions,
+CSRF, authorization, input validation, transactional rollback, concurrent checkout,
+idempotent retries, order transitions/cancellation, stock persistence, internal
+service authentication, rate limiting, and frontend proxy routing. Fixtures are
+removed after testing; the test containers stop when the suite finishes.
 
-Each service starts in its own directory and loads its local `.env`.
-The backend needs `MONGO_URI` and `JWT_SECRET` in `backend/.env`.
-The gateway needs `NOTIFI_SERVICE_URL=http://localhost:4002` and
-`STOCK_SERVICE_URL=http://localhost:4003` in `gateway/.env`.
-If you already run MongoDB on 27017, omit the MONGO_URI override and use your
-backend configuration instead.
-
-Notifications use the Gmail credentials in `microservices/notifications/.env`;
-checkout sends to a hardcoded recipient in `backend/controllers/orderController.js`.
-For testing without sending email, launch with blank credentials:
+Remove only the isolated test resources when finished:
 
 ```bash
-EMAIL_USER= EMAIL_APPLICATION_PASSWORD= MONGO_URI=mongodb://127.0.0.1:27018/exam1Db npm run run:all
+docker compose -p exam1-audit-test -f docker-compose.yml -f docker-compose.test.yml down -v
 ```
 
-Email failures are logged but do not prevent order creation.
-
-## Optional product data
-
-The seeder **deletes all existing products** before inserting five examples.
-Use only with a disposable test database:
-
-```bash
-cd backend
-MONGO_URI=mongodb://127.0.0.1:27018/exam1Db node seeder.js
-```
-
-Register a user through the UI, log in, then test products, cart, and checkout.
-There is no seeded admin account. The stock microservice only logs requests;
-it does not update MongoDB, and its checkout call is commented out.
+See [the audit report](docs/security-audit.md) for findings, verification results,
+and remaining deployment work. The changelog is maintained separately from this report.
