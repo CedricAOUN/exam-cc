@@ -114,5 +114,16 @@ services:
       start_period: 20s
     restart: unless-stopped
 
+  # Optional monitoring: docker compose --profile monitoring up -d uptime-kuma
+  uptime-kuma:
+    image: louislam/uptime-kuma:1
+    profiles: ['monitoring']
+    ports:
+      - '127.0.0.1:3001:3001'
+    volumes:
+      - kuma-data:/app/data
+    restart: unless-stopped
+
 volumes:
   mongo-data:
+  kuma-data:
