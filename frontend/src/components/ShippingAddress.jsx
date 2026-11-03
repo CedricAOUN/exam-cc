@@ -1,39 +1,11 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useCart } from '../context/CartContext';
 
 const ShippingAddress = () => {
   const { shippingAddress, dispatch } = useCart();
-  const [street, setStreet] = useState(shippingAddress.street || '');
-  const [city, setCity] = useState(shippingAddress.city || '');
-  const [postalCode, setPostalCode] = useState(shippingAddress.postalCode || '');
-  const [country, setCountry] = useState(shippingAddress.country || '');
-
-  const handleAddressChange = (event) => {
-    const { name, value } = event.target;
-    dispatch({
-      type: 'SET_SHIPPING_ADDRESS',
-      payload: {
-        ...shippingAddress,
-        [name]: value,
-      },
-    });
-    // Update local state for better user experience (optional)
-    switch (name) {
-      case 'street':
-        setStreet(value);
-        break;
-      case 'city':
-        setCity(value);
-        break;
-      case 'postalCode':
-        setPostalCode(value);
-        break;
-      case 'country':
-        setCountry(value);
-        break;
-      default:
-        break;
-    }
+  // Keep the fields and order summary in sync through the shared cart state.
+  const handleAddressChange = ({ target: { name, value } }) => {
+    dispatch({ type: 'SET_SHIPPING_ADDRESS', payload: { ...shippingAddress, [name]: value } });
   };
 
   return (
@@ -48,7 +20,10 @@ const ShippingAddress = () => {
             type="text"
             id="street"
             name="street"
-            value={street}
+            value={shippingAddress.street}
+            required
+            maxLength={200}
+            autoComplete="street-address"
             onChange={handleAddressChange}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
           />
@@ -61,7 +36,10 @@ const ShippingAddress = () => {
             type="text"
             id="city"
             name="city"
-            value={city}
+            value={shippingAddress.city}
+            required
+            maxLength={100}
+            autoComplete="address-level2"
             onChange={handleAddressChange}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
           />
@@ -74,7 +52,10 @@ const ShippingAddress = () => {
             type="text"
             id="postalCode"
             name="postalCode"
-            value={postalCode}
+            value={shippingAddress.postalCode}
+            required
+            maxLength={20}
+            autoComplete="postal-code"
             onChange={handleAddressChange}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
           />
@@ -87,7 +68,10 @@ const ShippingAddress = () => {
             type="text"
             id="country"
             name="country"
-            value={country}
+            value={shippingAddress.country}
+            required
+            maxLength={100}
+            autoComplete="country-name"
             onChange={handleAddressChange}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
           />

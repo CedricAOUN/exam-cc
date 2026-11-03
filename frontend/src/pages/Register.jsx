@@ -10,6 +10,7 @@ const Register = () => {
     password: '',
   });
   const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -21,20 +22,34 @@ const Register = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (submitting) return;
+    setError('');
+    const username = formData.username.trim();
+    const email = formData.email.trim().toLowerCase();
+    if (!username || !email || !formData.password) {
+      setError('Renseignez tous les champs.');
+      return;
+    }
+    if (!/^[a-zA-Z0-9_-]{3,40}$/.test(username)) {
+      setError(
+        'Le nom d’utilisateur doit contenir 3 à 40 lettres, chiffres, tirets ou underscores.',
+      );
+      return;
+    }
+    if (formData.password.length < 12 || new TextEncoder().encode(formData.password).length > 72) {
+      setError('Le mot de passe est trop court ou trop long.');
+      return;
+    }
+    setSubmitting(true);
     try {
-      await client.post('/auth/register', formData);
-      alert('Inscription réussie ! Vous pouvez maintenant vous connecter.');
-      navigate('/login');
-    } catch (err) {
-      if (err.response) {
-        // Erreur renvoyée par le serveur
-        const { message } = err.response.data;
-        alert(message); // Affiche un message à l'utilisateur (vous pouvez remplacer par un toast)
-      } else {
-        // Erreur réseau ou autre
-        alert('Une erreur est survenue. Veuillez réessayer.');
-      }
-      setError(err.response?.data?.message || 'Inscription impossible.');
+      await client.post('/auth/register', { ...formData, username, email });
+      navigate('/login', {
+        state: { message: 'Inscription réussie ! Vous pouvez maintenant vous connecter.' },
+      });
+    } catch (error) {
+      setError(error.response?.data?.message || 'Inscription impossible. Réessayez.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -42,10 +57,19 @@ const Register = () => {
     <div className="flex justify-center items-center h-screen">
       <form onSubmit={handleSubmit} className="bg-white p-6 rounded shadow-md w-80">
         <h2 className="text-2xl font-bold mb-4 text-center">Inscription</h2>
-        {error && <p className="text-red-500 mb-4">{error}</p>}
+        {error && (
+          <p role="alert" className="text-red-500 mb-4">
+            {error}
+          </p>
+        )}
         <input
           type="text"
           name="username"
+          aria-label="Nom d’utilisateur"
+          autoComplete="username"
+          minLength={3}
+          maxLength={40}
+          required
           placeholder="Nom d'utilisateur"
           value={formData.username}
           onChange={handleChange}
@@ -54,6 +78,10 @@ const Register = () => {
         <input
           type="email"
           name="email"
+          aria-label="Adresse email"
+          autoComplete="email"
+          maxLength={254}
+          required
           placeholder="Adresse email"
           value={formData.email}
           onChange={handleChange}
@@ -62,6 +90,8 @@ const Register = () => {
         <input
           type="password"
           name="password"
+          aria-label="Mot de passe"
+          autoComplete="new-password"
           placeholder="Mot de passe (12 caractères minimum)"
           minLength={12}
           maxLength={72}
@@ -70,7 +100,11 @@ const Register = () => {
           onChange={handleChange}
           className="border border-gray-300 p-2 w-full mb-4"
         />
-        <button type="submit" className="bg-blue-500 text-white p-2 w-full rounded">
+        <button
+          type="submit"
+          disabled={submitting}
+          className="bg-blue-500 text-white p-2 w-full rounded"
+        >
           S'inscrire
         </button>
       </form>

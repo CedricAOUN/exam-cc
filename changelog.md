@@ -2,6 +2,19 @@
 
 ## 2026-11-03
 
+### Focused E27 form and cart checks
+
+- Required empty login/registration fields and added one inline error message,
+  pending-submit protection, and visible registration success feedback.
+- Normalized registration emails and surrounding username whitespace before submission.
+- Required and bounded shipping address fields, rejected whitespace-only addresses
+  and empty carts, and trimmed address values before opening the order summary.
+- Kept address fields synchronized with cart state and retained final order validation.
+- Added eight interaction tests covering account feedback, duplicate clicks,
+  address validation, cart quantity/removal/clearing, escaped checkout text,
+  and cart/retry-key preservation after a failed order.
+- Frontend interaction tests, lint, formatting, and production build pass.
+
 ### Products page routing and error recovery
 
 - Added the missing `/products` route while keeping the catalogue at `/`.

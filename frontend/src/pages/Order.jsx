@@ -36,7 +36,9 @@ const Order = () => {
 
     // Vérifier le détail de l'adresse de livraison
     const requiredAddressFields = ['street', 'postalCode', 'city', 'country'];
-    const missingAddressDetails = requiredAddressFields.filter((field) => !shippingAddress[field]);
+    const missingAddressDetails = requiredAddressFields.filter(
+      (field) => !shippingAddress[field]?.trim(),
+    );
 
     if (missingAddressDetails.length > 0) {
       alert(
