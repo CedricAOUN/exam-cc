@@ -1,53 +1,54 @@
-// notifi/server.js
+require('dotenv').config();
 const express = require('express');
-const bodyParser = require('body-parser');
+const helmet = require('helmet');
+const Joi = require('joi');
 const nodemailer = require('nodemailer');
-require('dotenv').config()
-//console.log(`process evn is ${JSON.stringify(process.env)}`)
-
+const serviceAuth = require('./serviceAuth');
 const app = express();
-
+app.disable('x-powered-by');
+app.use(helmet());
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
-
-app.use(bodyParser.json());
-
-// Configuration de Nodemailer
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER, // Adresse Gmail
-    pass: process.env.EMAIL_APPLICATION_PASSWORD, // Mot de passe spécifique à l'application
-  },
+app.use(serviceAuth);
+app.use(express.json({ limit: '32kb' }));
+const schema = Joi.object({
+  to: Joi.string()
+    .email({ tlds: { allow: false } })
+    .max(254)
+    .required(),
+  subject: Joi.string()
+    .max(200)
+    .pattern(/^[^\r\n]+$/)
+    .required(),
+  text: Joi.string().max(10000).required(),
 });
-
-// Route pour envoyer un email
+const enabled = Boolean(process.env.EMAIL_USER && process.env.EMAIL_APPLICATION_PASSWORD);
+const transporter = enabled
+  ? nodemailer.createTransport({
+      service: 'gmail',
+      auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_APPLICATION_PASSWORD },
+      connectionTimeout: 2000,
+      greetingTimeout: 2000,
+      socketTimeout: 2500,
+      disableFileAccess: true,
+      disableUrlAccess: true,
+    })
+  : null;
 app.post('/notify', async (req, res) => {
-  const { to, subject, text } = req.body;
-  console.log(`to is ${to} subject is ${subject} text is ${text}`)
-
-  //const { message } = req.body;
-    //console.log(`Notification: ${text}`);
-    //res.send('Notification envoyée mail');
-
-  const mailOptions = {
-    from: process.env.EMAIL_USER,
-    to,
-    subject,
-    text,
-  };
-
+  const { value, error } = schema.required().validate(req.body, { convert: false });
+  if (error) return res.status(400).json({ message: 'Invalid notification.' });
+  if (!enabled)
+    return res.status(202).json({ delivered: false, message: 'Email delivery disabled.' });
   try {
-    await transporter.sendMail(mailOptions);
-    console.log('Email envoyé avec succès');
-    return res.status(200).json({ message: 'Email envoyé avec succès.' });
-  } catch (error) {
-    console.error('Erreur lors de l\'envoi de l\'email', error);
-    return res.status(500).json({ message: 'Erreur lors de l\'envoi de l\'email.', error });
+    await transporter.sendMail({ from: process.env.EMAIL_USER, ...value });
+    res.json({ delivered: true });
+  } catch {
+    console.warn('Email delivery failed.');
+    res.status(502).json({ message: 'Email delivery failed.' });
   }
 });
-
-// Lancer le service Notification
-const PORT = process.env.NOTIFI_PORT || 4002;
-app.listen(PORT, () => {
-  console.log(`Service de notification en écoute sur le port ${PORT}`);
+app.use((req, res) => res.status(404).json({ message: 'Route not found.' }));
+app.use((error, req, res, next) => {
+  if (res.headersSent) return next(error);
+  res.status(error.type === 'entity.too.large' ? 413 : 400).json({ message: 'Invalid request.' });
 });
+app.listen(process.env.NOTIFI_PORT || 4002, () => console.log('Notifications ready'));

@@ -1,6 +1,6 @@
 // src/App.js
 import React from 'react';
-import { createBrowserRouter, RouterProvider, Outlet } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider, Outlet, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import ProductList from './pages/ProductList';
 import Cart from './pages/Cart';
@@ -41,20 +41,33 @@ const router = createBrowserRouter([
         element: <Register />,
       },
       {
-        path: 'shippig_payment',
-        element: <ShippingPayment />,
+        path: 'shipping-payment',
+        element: (
+          <ProtectedRoute>
+            <ShippingPayment />
+          </ProtectedRoute>
+        ),
       },
+      { path: 'shippig_payment', element: <Navigate to="/shipping-payment" replace /> },
       {
         path: 'cart',
         element: <Cart />,
       },
       {
         path: 'order',
-        element: <ProtectedRoute><Order /></ProtectedRoute>,
+        element: (
+          <ProtectedRoute>
+            <Order />
+          </ProtectedRoute>
+        ),
       },
       {
         path: 'admin',
-        element: <AdminRoute><Admin /></AdminRoute>,
+        element: (
+          <AdminRoute>
+            <Admin />
+          </AdminRoute>
+        ),
       },
     ],
   },

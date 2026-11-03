@@ -1,23 +1,65 @@
-// server.js
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-require('dotenv').config();
+const helmet = require('helmet');
+const cookieParser = require('cookie-parser');
+const mongoose = require('mongoose');
+const { origins, validateConfig } = require('./config/security');
 const connectDB = require('./config/db');
-
 const app = express();
-
+app.disable('x-powered-by');
+if (process.env.TRUST_PROXY) app.set('trust proxy', process.env.TRUST_PROXY);
+app.use(helmet());
+app.use(cors({ origin: origins, credentials: true }));
+app.use((req, res, next) => {
+  res.set('Cache-Control', 'no-store');
+  if (
+    !['GET', 'HEAD', 'OPTIONS'].includes(req.method) &&
+    req.get('Origin') &&
+    !origins.includes(req.get('Origin'))
+  ) {
+    return res.status(403).json({ message: 'Origine interdite.' });
+  }
+  next();
+});
+app.use(express.json({ limit: '32kb' }));
+app.use(cookieParser());
 app.get('/health', (req, res) => {
-  const ready = require('mongoose').connection.readyState === 1;
+  const ready = mongoose.connection.readyState === 1;
   res.status(ready ? 200 : 503).json({ status: ready ? 'ok' : 'unavailable' });
 });
-
-connectDB();
-
-app.use(cors());
-app.use(express.json());
 app.use('/api/products', require('./routes/productRoutes'));
 app.use('/api/orders', require('./routes/orderRoutes'));
 app.use('/api/auth', require('./routes/authRoutes'));
-
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Serveur en écoute sur le port ${PORT}`));
+app.use((req, res) => res.status(404).json({ message: 'Route introuvable.' }));
+app.use((error, req, res, next) => {
+  if (res.headersSent) return next(error);
+  if (error.code === 11000) return res.status(409).json({ message: 'Ce compte existe déjà.' });
+  if (['ValidationError', 'CastError'].includes(error.name) || error.type === 'entity.parse.failed')
+    return res.status(400).json({ message: 'Données invalides.' });
+  if (error.type === 'entity.too.large')
+    return res.status(413).json({ message: 'Requête trop volumineuse.' });
+  if (error.status && error.status < 500)
+    return res.status(error.status).json({ message: error.message });
+  console.error('Request failed', { name: error.name, code: error.code });
+  res
+    .status(error.status === 503 ? 503 : 500)
+    .json({ message: 'Service indisponible. Réessayez plus tard.' });
+});
+async function start() {
+  validateConfig();
+  await connectDB();
+  // Build unique indexes before accepting concurrent registrations.
+  await Promise.all([
+    require('./models/User').init(),
+    require('./models/Product').init(),
+    require('./models/Order').init(),
+  ]);
+  return app.listen(process.env.PORT || 5000, () => console.log('API ready'));
+}
+if (require.main === module)
+  start().catch((error) => {
+    console.error('API startup failed', { name: error.name });
+    process.exit(1);
+  });
+module.exports = { app, start };

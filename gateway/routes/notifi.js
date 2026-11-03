@@ -1,14 +1,19 @@
-// gateway/routes/notifi.js
 const express = require('express');
 const proxy = require('express-http-proxy');
-require('dotenv').config();
-
 const router = express.Router();
-
-const NOTIFI_SERVICE_URL = process.env.NOTIFI_SERVICE_URL;
-
-router.use('/', proxy(NOTIFI_SERVICE_URL, {
-  proxyReqPathResolver: (req) => req.originalUrl,
-}));
-
+router.use(
+  '/',
+  proxy(process.env.NOTIFI_SERVICE_URL, {
+    timeout: 3000,
+    limit: '32kb',
+    proxyReqPathResolver: (req) => req.originalUrl,
+    proxyReqOptDecorator: (options) => {
+      // User cookies and authentication headers must never reach internal services.
+      delete options.headers.cookie;
+      delete options.headers.authorization;
+      options.headers['x-service-token'] = process.env.SERVICE_TOKEN;
+      return options;
+    },
+  }),
+);
 module.exports = router;

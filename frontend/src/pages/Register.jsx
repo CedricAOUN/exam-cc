@@ -1,8 +1,7 @@
-import { API_BASE_URL } from '../services/config';
 // src/pages/Register.js
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import client from '../services/client';
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -23,21 +22,19 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post(`${API_BASE_URL}/auth/register`, formData);
+      await client.post('/auth/register', formData);
       alert('Inscription réussie ! Vous pouvez maintenant vous connecter.');
       navigate('/login');
     } catch (err) {
-      //console.error('Erreur lors de l\'inscription', err);
       if (err.response) {
         // Erreur renvoyée par le serveur
         const { message } = err.response.data;
         alert(message); // Affiche un message à l'utilisateur (vous pouvez remplacer par un toast)
       } else {
         // Erreur réseau ou autre
-        console.error("Erreur réseau ou serveur", err);
-        alert("Une erreur est survenue. Veuillez réessayer.");
+        alert('Une erreur est survenue. Veuillez réessayer.');
       }
-      //setError('Une erreur est survenue lors de la création du compte.');
+      setError(err.response?.data?.message || 'Inscription impossible.');
     }
   };
 
@@ -65,12 +62,17 @@ const Register = () => {
         <input
           type="password"
           name="password"
-          placeholder="Mot de passe"
+          placeholder="Mot de passe (12 caractères minimum)"
+          minLength={12}
+          maxLength={72}
+          required
           value={formData.password}
           onChange={handleChange}
           className="border border-gray-300 p-2 w-full mb-4"
         />
-        <button type="submit" className="bg-blue-500 text-white p-2 w-full rounded">S'inscrire</button>
+        <button type="submit" className="bg-blue-500 text-white p-2 w-full rounded">
+          S'inscrire
+        </button>
       </form>
     </div>
   );

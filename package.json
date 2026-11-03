@@ -1,17 +1,36 @@
 {
   "scripts": {
-    "start:notifications": "cd microservices/notifications && nodemon index.js",
-    "start:stock-management": "cd microservices/stock-management && nodemon index.js",
-    "start:gateway": "cd gateway && nodemon server.js",
-    "start:backend": "cd backend && nodemon server.js",
+    "start:notifications": "cd microservices/notifications && node --env-file=../../.env --watch index.js",
+    "start:stock-management": "cd microservices/stock-management && node --env-file=../../.env --watch index.js",
+    "start:gateway": "cd gateway && node --env-file=../.env --watch server.js",
+    "start:backend": "cd backend && node --env-file=../.env --watch server.js",
     "start:frontend": "npm --prefix frontend start",
     "start:all": "npm-run-all --parallel start:notifications start:stock-management start:gateway start:backend start:frontend",
     "run:all": "npm run start:all",
     "install:all": "npm ci --prefix backend && npm ci --prefix frontend && npm ci --prefix gateway && npm ci --prefix microservices/notifications && npm ci --prefix microservices/stock-management",
-    "db:start": "docker compose up -d mongo"
+    "db:start": "docker compose up -d mongo",
+    "test": "npm test --prefix backend && npm test --prefix frontend",
+    "test:integration": "docker compose -p exam1-audit-test -f docker-compose.yml -f docker-compose.test.yml up --build --abort-on-container-exit --exit-code-from tests",
+    "lint": "eslint backend gateway microservices docker && npm run lint --prefix frontend",
+    "format:check": "prettier --check backend gateway microservices docker frontend/src frontend/vite.config.mjs frontend/index.html docker-compose*.yml",
+    "format": "prettier --write backend gateway microservices docker frontend/src frontend/vite.config.mjs frontend/index.html docker-compose*.yml"
   },
   "devDependencies": {
-    "nodemon": "^3.1.14",
-    "npm-run-all": "^4.1.5"
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.14.0",
+    "globals": "^17.14.0",
+    "npm-run-all2": "^9.0.4",
+    "prettier": "^3.9.10"
+  },
+  "overrides": {
+    "eslint": {
+      "minimatch": "^11.0.1"
+    },
+    "@eslint/config-array": {
+      "minimatch": "^11.0.1"
+    }
+  },
+  "engines": {
+    "node": "^22.22.2 || ^24.15.0 || >=26.0.0"
   }
 }

@@ -1,11 +1,16 @@
-// routes/productRoutes.js
 const express = require('express');
-const { getProducts, updateProductStock } = require('../controllers/productController');
+const controller = require('../controllers/productController');
 const { authenticateToken, isAdmin } = require('../middlewares/authMiddleware');
-
+const { schemas, validate, Joi, id } = require('../middlewares/validation');
+const { asyncHandler } = require('../utils/http');
 const router = express.Router();
-router.get('/', getProducts);
-router.put("/:productId/stock", authenticateToken, isAdmin, updateProductStock);
-
-
+router.get('/', asyncHandler(controller.getProducts));
+router.put(
+  '/:productId/stock',
+  authenticateToken,
+  isAdmin,
+  validate(Joi.object({ productId: id }), 'params'),
+  validate(schemas.stock),
+  asyncHandler(controller.updateProductStock),
+);
 module.exports = router;

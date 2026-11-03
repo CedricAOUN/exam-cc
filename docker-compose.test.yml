@@ -1,0 +1,35 @@
+# Isolated stack: no host ports, dedicated Compose project/database, email disabled.
+services:
+  frontend:
+    ports: !reset []
+  backend:
+    ports: !reset []
+    environment:
+      MONGO_URI: mongodb://mongo:27017/exam1AuditTest?replicaSet=rs0
+      COOKIE_SECURE: 'false'
+      NOTIFICATION_EMAIL: ''
+  gateway:
+    ports: !reset []
+  stock-management:
+    ports: !reset []
+    environment:
+      MONGO_URI: mongodb://mongo:27017/exam1AuditTest?replicaSet=rs0
+  notifications:
+    ports: !reset []
+    environment:
+      EMAIL_USER: ''
+      EMAIL_APPLICATION_PASSWORD: ''
+  mongo:
+    ports: !reset []
+  tests:
+    build: ./backend
+    command: ['node', '--test', 'tests/integration.test.js']
+    environment:
+      RUN_INTEGRATION: '1'
+      TEST_BASE_URL: http://frontend
+      MONGO_URI: mongodb://mongo:27017/exam1AuditTest?replicaSet=rs0
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET}
+      SERVICE_TOKEN: ${SERVICE_TOKEN:?Set SERVICE_TOKEN}
+    depends_on:
+      frontend:
+        condition: service_healthy

@@ -11,8 +11,10 @@ const orderItemSchema = new mongoose.Schema({
     type: Number,
     required: true,
     min: [1, 'Au moins 1 produit est requis'],
+    validate: Number.isInteger,
   },
   price: {
+    min: 0,
     type: Number,
     required: true,
   },
@@ -21,6 +23,9 @@ const orderItemSchema = new mongoose.Schema({
 // Define the schema for the entire order
 const orderSchema = new mongoose.Schema(
   {
+    checkoutKey: { type: String, immutable: true },
+    requestHash: { type: String, immutable: true },
+    stockReserved: { type: Boolean, default: false },
     userId: {
       type: mongoose.Schema.Types.ObjectId, // Reference to the user in your database
       ref: 'User',
@@ -28,6 +33,7 @@ const orderSchema = new mongoose.Schema(
     },
     items: [orderItemSchema], // Array of order items
     total: {
+      min: 0,
       type: Number,
       required: true,
     },
@@ -63,7 +69,15 @@ const orderSchema = new mongoose.Schema(
   },
   {
     timestamps: true, // Automatically adds createdAt and updatedAt fields
-  }
+  },
+);
+
+orderSchema.index(
+  { userId: 1, checkoutKey: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { checkoutKey: { $type: 'string' } },
+  },
 );
 
 // Create the model

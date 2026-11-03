@@ -1,15 +1,28 @@
-// backend/routes/orderRoutes.js
 const express = require('express');
-const { createOrder, deleteOrder, getOrders, validateOrder, updateOrderStatus } = require('../controllers/orderController');
+const controller = require('../controllers/orderController');
 const { authenticateToken, isAdmin } = require('../middlewares/authMiddleware');
-
+const { schemas, validate, Joi, id } = require('../middlewares/validation');
+const { asyncHandler } = require('../utils/http');
 const router = express.Router();
-
-router.get('/', authenticateToken, isAdmin, getOrders); // Accès pour administrateurs
-router.post('/', authenticateToken, createOrder); // Accès pour utilisateurs connectés
-router.delete('/:id', authenticateToken, deleteOrder); // Accès pour administrateurs
-router.put('/:id/validate', authenticateToken, isAdmin, validateOrder); // Accès pour administrateurs
-router.put('/:orderId/status', authenticateToken, isAdmin, updateOrderStatus); // Accès pour administrateurs
-
-
+router.use(authenticateToken);
+router.get('/', asyncHandler(controller.getOrders));
+router.post(
+  '/',
+  (req, res, next) => {
+    if (!/^[a-zA-Z0-9-]{16,64}$/.test(req.get('Idempotency-Key') || ''))
+      return res.status(400).json({ message: 'Clé de commande requise.' });
+    next();
+  },
+  validate(schemas.order),
+  asyncHandler(controller.createOrder),
+);
+router.use('/:orderId', validate(Joi.object({ orderId: id }), 'params'));
+router.delete('/:orderId', asyncHandler(controller.deleteOrder));
+router.put('/:orderId/validate', isAdmin, asyncHandler(controller.validateOrder));
+router.put(
+  '/:orderId/status',
+  isAdmin,
+  validate(schemas.status),
+  asyncHandler(controller.updateOrderStatus),
+);
 module.exports = router;

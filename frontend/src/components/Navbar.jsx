@@ -2,36 +2,36 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 
 const Navbar = () => {
   const navigate = useNavigate();
-  const { cart } = useCart();
-
-  // Simuler l'état d'authentification avec le localStorage
-  const isAuthenticated = !!localStorage.getItem('token');
-  const username = localStorage.getItem('username'); // Récupère le nom d'utilisateur si connecté
-
-  const handleLogout = () => {
-    // Supprimer les informations d'authentification
-    localStorage.removeItem('token');
-    localStorage.removeItem('username');
-    navigate('/login');
+  const { cart, dispatch } = useCart();
+  const { user, logout } = useAuth();
+  const isAuthenticated = Boolean(user);
+  const username = user?.username;
+  const handleLogout = async () => {
+    try {
+      await logout();
+      dispatch({ type: 'RESET_CART' });
+      navigate('/login');
+    } catch {
+      alert('Déconnexion impossible. Réessayez.');
+    }
   };
 
   return (
     <nav className="bg-blue-500 text-white p-4 flex justify-between items-center">
       <div className="flex items-center space-x-4">
-        <Link to="/" className="text-xl font-bold">Mon Application</Link>
+        <Link to="/" className="text-xl font-bold">
+          Mon Application
+        </Link>
       </div>
-      
+
       <div className="flex items-center space-x-4">
         {/* Afficher le nom de l'utilisateur s'il est connecté */}
-        {isAuthenticated && (
-          <span className="font-semibold">
-            Bonjour, {username}
-          </span>
-        )}
-        
+        {isAuthenticated && <span className="font-semibold">Bonjour, {username}</span>}
+
         {/* Lien vers le Panier avec le nombre d'articles */}
         <Link to="/cart" className="relative">
           <span>Panier</span>
@@ -41,7 +41,8 @@ const Navbar = () => {
             </span>
           )}
         </Link>
-        
+
+        {user?.role === 'admin' && <Link to="/admin">Administration</Link>}
         {/* Lien Connexion / Déconnexion */}
         {!isAuthenticated ? (
           <>

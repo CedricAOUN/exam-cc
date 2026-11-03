@@ -1,5 +1,11 @@
 x-node-healthcheck: &node-healthcheck
-  test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:' + (process.env.PORT || process.env.GATEWAY_PORT || process.env.NOTIFI_PORT || 4003) + '/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+  test:
+    [
+      'CMD',
+      'node',
+      '-e',
+      "fetch('http://127.0.0.1:' + (process.env.PORT || process.env.GATEWAY_PORT || process.env.NOTIFI_PORT || 4003) + '/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))",
+    ]
   interval: 10s
   timeout: 5s
   retries: 5
@@ -14,7 +20,7 @@ services:
       backend:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/health"]
+      test: ['CMD', 'wget', '-q', '-O', '/dev/null', 'http://127.0.0.1/health']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -26,9 +32,14 @@ services:
       - '127.0.0.1:5000:5000'
     environment:
       PORT: 5000
-      MONGO_URI: mongodb://mongo:27017/exam1Db
+      MONGO_URI: mongodb://mongo:27017/exam1Db?replicaSet=rs0
       JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in the root .env (see .env.example)}
       GATEWAY_URL: http://gateway:8000
+      SERVICE_TOKEN: ${SERVICE_TOKEN:?Set SERVICE_TOKEN in the root .env}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000}
+      TRUST_PROXY: uniquelocal
+      NOTIFICATION_EMAIL: ${NOTIFICATION_EMAIL:-}
     depends_on:
       mongo:
         condition: service_healthy
@@ -42,6 +53,7 @@ services:
     ports:
       - '127.0.0.1:8000:8000'
     environment:
+      SERVICE_TOKEN: ${SERVICE_TOKEN:?Set SERVICE_TOKEN in the root .env}
       GATEWAY_PORT: 8000
       NOTIFI_SERVICE_URL: http://notifications:4002
       STOCK_SERVICE_URL: http://stock-management:4003
@@ -58,6 +70,7 @@ services:
     ports:
       - '127.0.0.1:4002:4002'
     environment:
+      SERVICE_TOKEN: ${SERVICE_TOKEN:?Set SERVICE_TOKEN in the root .env}
       NOTIFI_PORT: 4002
       EMAIL_USER: ${EMAIL_USER:-}
       EMAIL_APPLICATION_PASSWORD: ${EMAIL_APPLICATION_PASSWORD:-}
@@ -66,6 +79,12 @@ services:
 
   stock-management:
     build: ./microservices/stock-management
+    environment:
+      SERVICE_TOKEN: ${SERVICE_TOKEN:?Set SERVICE_TOKEN in the root .env}
+      MONGO_URI: mongodb://mongo:27017/exam1Db?replicaSet=rs0
+    depends_on:
+      mongo:
+        condition: service_healthy
     ports:
       - '127.0.0.1:4003:4003'
     healthcheck: *node-healthcheck
@@ -73,6 +92,7 @@ services:
 
   mongo:
     image: mongo:8.0
+    command: ['mongod', '--replSet', 'rs0', '--bind_ip_all']
     environment:
       # Use glibc rseq registration to avoid MongoDB's TCMalloc/kernel conflict.
       # https://github.com/docker-library/mongo/issues/765
@@ -81,8 +101,9 @@ services:
       - '127.0.0.1:27018:27017'
     volumes:
       - mongo-data:/data/db
+      - ./docker/mongo-health.js:/etc/mongo-health.js:ro
     healthcheck:
-      test: ["CMD", "mongosh", "--quiet", "--eval", "quit(db.adminCommand('ping').ok ? 0 : 1)"]
+      test: ['CMD', 'mongosh', '--quiet', '/etc/mongo-health.js']
       interval: 10s
       timeout: 5s
       retries: 5

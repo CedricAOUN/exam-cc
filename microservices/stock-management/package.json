@@ -3,13 +3,17 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node index.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "express": "^4.21.1"
+    "dotenv": "^16.6.1",
+    "express": "^4.22.3",
+    "helmet": "^8.3.0",
+    "joi": "^18.3.1",
+    "mongoose": "^8.24.8"
   }
 }
