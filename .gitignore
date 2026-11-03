@@ -28,5 +28,7 @@ coverage/
 # MongoDB
 data/db/
 
+.claude
+
 # Autre
 .DS_Store

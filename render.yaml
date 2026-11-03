@@ -1,0 +1,148 @@
+# Render Blueprint: everything except MongoDB (use MongoDB Atlas, see README notes below).
+#
+# Topology (all on the free plan):
+#   exam1-frontend      static site; proxies /api/* to exam1-backend (same origin => cookies just work)
+#   exam1-backend       Express API (talks to Atlas, and to the gateway for notifications)
+#   exam1-gateway       internal gateway -> notifications + stock
+#   exam1-notifications mail service
+#   exam1-stock         stock service (talks to Atlas)
+#
+# IMPORTANT: the service names below determine the public URLs
+# (https://<name>.onrender.com). If Render reports a name as taken it appends a
+# suffix; in that case update every hard-coded URL in this file to match.
+#
+# Secrets you must enter in the dashboard on first deploy (sync: false):
+#   MONGO_URI (backend + stock), EMAIL_USER / EMAIL_APPLICATION_PASSWORD (optional)
+# In Atlas > Network Access allow 0.0.0.0/0 (Render free has no static outbound IPs).
+
+envVarGroups:
+  - name: exam1-shared
+    envVars:
+      # One random token shared by backend, gateway, notifications and stock.
+      - key: SERVICE_TOKEN
+        generateValue: true
+      - key: LOG_LEVEL
+        value: info
+
+services:
+  - type: web
+    name: exam1-frontend
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+    routes:
+      # Proxy API calls to the backend so the browser sees a single origin.
+      - type: rewrite
+        source: /api/*
+        destination: https://exam1-backend.onrender.com/api/*
+      # SPA fallback for react-router.
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    headers:
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
+      - path: /*
+        name: Content-Security-Policy
+        value: "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'"
+
+  - type: web
+    name: exam1-backend
+    runtime: node
+    plan: free
+    rootDir: backend
+    buildCommand: npm ci --omit=dev
+    startCommand: node server.js
+    healthCheckPath: /health
+    envVars:
+      - fromGroup: exam1-shared
+      - key: NODE_VERSION
+        value: 22
+      - key: NODE_ENV
+        value: production
+      - key: MONGO_URI
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: GATEWAY_URL
+        value: https://exam1-gateway.onrender.com
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: ALLOWED_ORIGINS
+        value: https://exam1-frontend.onrender.com
+      - key: TRUST_PROXY
+        value: "1"
+      - key: NOTIFICATION_EMAIL
+        sync: false
+
+  - type: web
+    name: exam1-gateway
+    runtime: node
+    plan: free
+    rootDir: gateway
+    buildCommand: npm ci --omit=dev
+    startCommand: node server.js
+    healthCheckPath: /health
+    envVars:
+      - fromGroup: exam1-shared
+      - key: NODE_VERSION
+        value: 22
+      - key: NODE_ENV
+        value: production
+      # The gateway reads GATEWAY_PORT (not PORT); 10000 is Render's default port.
+      - key: GATEWAY_PORT
+        value: "10000"
+      - key: NOTIFI_SERVICE_URL
+        value: https://exam1-notifications.onrender.com
+      - key: STOCK_SERVICE_URL
+        value: https://exam1-stock.onrender.com
+
+  - type: web
+    name: exam1-notifications
+    runtime: node
+    plan: free
+    rootDir: microservices/notifications
+    buildCommand: npm ci --omit=dev
+    startCommand: node index.js
+    healthCheckPath: /health
+    envVars:
+      - fromGroup: exam1-shared
+      - key: NODE_VERSION
+        value: 22
+      - key: NODE_ENV
+        value: production
+      - key: NOTIFI_PORT
+        value: "10000"
+      # Optional: without both, email is disabled (HTTP 202).
+      - key: EMAIL_USER
+        sync: false
+      - key: EMAIL_APPLICATION_PASSWORD
+        sync: false
+
+  - type: web
+    name: exam1-stock
+    runtime: node
+    plan: free
+    rootDir: microservices/stock-management
+    buildCommand: npm ci --omit=dev
+    startCommand: node index.js
+    healthCheckPath: /health
+    envVars:
+      - fromGroup: exam1-shared
+      - key: NODE_VERSION
+        value: 22
+      - key: NODE_ENV
+        value: production
+      - key: MONGO_URI
+        sync: false
