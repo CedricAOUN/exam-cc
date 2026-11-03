@@ -1,16 +1,16 @@
 const mongoose = require('mongoose');
 
 /**
- * @module models/Order
  * Mongoose model for customer orders. Orders carry an immutable idempotency
  * `checkoutKey`/`requestHash` pair (unique per user) so a retried checkout
  * never creates a duplicate order.
+ * @module models/Order
  */
 
 /**
  * Sub-schema for a single order line.
  * @typedef {Object} OrderItem
- * @property {import('mongoose').Types.ObjectId} productId Referenced Product.
+ * @property {ObjectId} productId Referenced Product.
  * @property {number} quantity Positive integer.
  * @property {number} price Unit price at order time (>= 0).
  */
@@ -38,7 +38,7 @@ const orderItemSchema = new mongoose.Schema({
  * @property {string} [checkoutKey] Idempotency key supplied by the client.
  * @property {string} [requestHash] Hash of the request body bound to the key.
  * @property {boolean} stockReserved Whether stock was already decremented.
- * @property {import('mongoose').Types.ObjectId} userId Owner of the order.
+ * @property {ObjectId} userId Owner of the order.
  * @property {OrderItem[]} items Ordered lines.
  * @property {number} total Order total (>= 0).
  * @property {'En attente'|'En cours de traitement'|'Expédiée'|'Délivrée'|'Annulée'} status

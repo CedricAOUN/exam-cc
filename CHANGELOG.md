@@ -2,6 +2,15 @@
 
 ## 2026-11-03
 
+### Generated documentation and debug tracing
+
+- Added `jsdoc` with `jsdoc.json` and an `npm run docs` script that generates HTML
+  API documentation into `docs/api/` (git-ignored). Replaced TypeScript-style
+  `import()` types in comments with plain names so the generator parses them.
+- Added the `debug` package to the backend with `shop:server` and `shop:orders`
+  namespaces (startup steps, checkout flow); silent unless `DEBUG` is set and it
+  logs no bodies or credentials.
+
 ### Deployment (Render)
 
 - Deployed the application on Render using `render.yaml`; the frontend is live at

@@ -4,8 +4,8 @@ const { fail } = require('../utils/http');
 const { notify } = require('../utils/notifications');
 /**
  * GET /api/products: public catalogue (max 1000 products).
- * @param {import('express').Request} req
- * @param {import('express').Response} res 200 array of products.
+ * @param {express.Request} req
+ * @param {express.Response} res 200 array of products.
  * @returns {Promise<void>}
  */
 exports.getProducts = async (req, res) => res.json(await Product.find().limit(1000));
@@ -13,8 +13,8 @@ exports.getProducts = async (req, res) => res.json(await Product.find().limit(10
  * PUT /api/products/:productId/stock (admin): set a product's absolute stock level.
  * The write is delegated to the stock microservice through the gateway using the
  * shared `X-Service-Token`; the admin is then notified by email (best-effort).
- * @param {import('express').Request} req Params: `productId`; body: `{ stock }`.
- * @param {import('express').Response} res 200 `{ message, product }`; 404 if unknown; 503 if the stock service is down.
+ * @param {express.Request} req Params: `productId`; body: `{ stock }`.
+ * @param {express.Response} res 200 `{ message, product }`; 404 if unknown; 503 if the stock service is down.
  * @returns {Promise<void>}
  */
 exports.updateProductStock = async (req, res) => {

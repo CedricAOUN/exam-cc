@@ -32,3 +32,6 @@ data/db/
 
 # Autre
 .DS_Store
+
+# Generated API documentation (npm run docs)
+docs/api/

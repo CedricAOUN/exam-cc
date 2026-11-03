@@ -57,9 +57,9 @@ const schemas = {
  * Build a middleware that validates `req[source]` against a Joi schema.
  * Type coercion is disabled; on failure it responds 400 with the offending field
  * paths, otherwise it replaces `req[source]` with the sanitised value.
- * @param {import('joi').ObjectSchema} schema Schema to apply.
+ * @param {Joi.ObjectSchema} schema Schema to apply.
  * @param {'body'|'params'|'query'} [source='body'] Request part to validate.
- * @returns {import('express').RequestHandler}
+ * @returns {express.RequestHandler}
  */
 const validate =
   (schema, source = 'body') =>

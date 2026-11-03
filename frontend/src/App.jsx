@@ -29,7 +29,7 @@ const MainLayout = () => (
 /**
  * Route table. `shipping-payment` and `order` require login, `admin` requires
  * the admin role; `shippig_payment` is a legacy typo redirect.
- * @type {import('react-router-dom').RouteObject[]}
+ * @type {Object[]}
  */
 export const appRoutes = [
   {

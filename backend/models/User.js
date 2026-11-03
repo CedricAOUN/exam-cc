@@ -1,5 +1,4 @@
 /**
- * @module models/User
  * Mongoose model for accounts. The password is hashed with bcrypt in a `pre('save')`
  * hook and excluded from queries by default (`select: false`).
  * `sessionVersion` is bumped to invalidate previously issued tokens.
@@ -9,6 +8,7 @@
  * @property {string} password bcrypt hash.
  * @property {number} sessionVersion
  * @property {'user'|'admin'} role
+ * @module models/User
  */
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');

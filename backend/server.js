@@ -3,6 +3,7 @@
  * Exports `app` (used by tests) and `start`.
  */
 require('dotenv').config();
+const debug = require('debug')('shop:server');
 const { logger, requestLogger, fatal } = require('./logger');
 const express = require('express');
 const cors = require('cors');
@@ -54,17 +55,20 @@ app.use((error, req, res, next) => {
 });
 /**
  * Validate configuration, connect to MongoDB, build indexes, then start listening.
- * @returns {Promise<import('http').Server>} The running HTTP server (port `PORT`, default 5000).
+ * @returns {Promise<http.Server>} The running HTTP server (port `PORT`, default 5000).
  */
 async function start() {
   validateConfig();
+  debug('configuration validated');
   await connectDB();
+  debug('database connected');
   // Build unique indexes before accepting concurrent registrations.
   await Promise.all([
     require('./models/User').init(),
     require('./models/Product').init(),
     require('./models/Order').init(),
   ]);
+  debug('indexes ready, starting HTTP listener');
   return app.listen(process.env.PORT || 5000, () =>
     logger.info('API ready', { port: Number(process.env.PORT || 5000) }),
   );

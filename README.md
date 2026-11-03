@@ -169,3 +169,13 @@ docker compose -p exam1-audit-test -f docker-compose.yml -f docker-compose.test.
 
 See [the audit report](docs/security-audit.md) for findings, verification results,
 and remaining deployment work. The changelog is maintained separately from this report.
+
+## API documentation and debugging
+
+- `npm run docs` generates HTML documentation from the JSDoc comments (backend,
+  gateway, microservices and frontend services) into `docs/api/` (git-ignored).
+  Open `docs/api/index.html`. JSX components are documented in source only, as
+  JSDoc cannot parse JSX.
+- Development tracing uses the `debug` package. Enable it with
+  `DEBUG='shop:*' node backend/server.js` (namespaces `shop:server`, `shop:orders`).
+  It is silent by default and never prints request bodies or credentials.

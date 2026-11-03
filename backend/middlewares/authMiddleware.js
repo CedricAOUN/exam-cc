@@ -10,7 +10,7 @@ const { asyncHandler } = require('../utils/http');
  * attaches `req.user` and `req.csrfToken`. For non-safe methods it also requires a
  * matching `X-CSRF-Token` header (compared in constant time).
  * Responds 401 (no/invalid session) or 403 (bad CSRF token) otherwise.
- * @type {import('express').RequestHandler}
+ * @type {express.RequestHandler}
  */
 exports.authenticateToken = asyncHandler(async (req, res, next) => {
   const token = req.cookies?.session;
@@ -47,7 +47,7 @@ exports.authenticateToken = asyncHandler(async (req, res, next) => {
 
 /**
  * Express middleware: allow only administrators. Must run after `authenticateToken`.
- * @type {import('express').RequestHandler}
+ * @type {express.RequestHandler}
  */
 exports.isAdmin = (req, res, next) => {
   if (req.user?.role !== 'admin') return res.status(403).json({ message: 'Accès interdit.' });

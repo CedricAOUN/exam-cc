@@ -1,11 +1,11 @@
 /**
- * @module models/Product
  * Mongoose model for catalogue products.
  * @typedef {Object} ProductDocument
  * @property {string} name
  * @property {number} price Unit price (>= 0).
  * @property {string} description
  * @property {number} stock Integer stock level (>= 0).
+ * @module models/Product
  */
 const mongoose = require('mongoose');
 

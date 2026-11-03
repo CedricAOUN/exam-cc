@@ -13,12 +13,14 @@
     "test:integration": "docker compose -p exam1-audit-test -f docker-compose.yml -f docker-compose.test.yml up --build --abort-on-container-exit --exit-code-from tests",
     "lint": "eslint backend gateway microservices docker && npm run lint --prefix frontend",
     "format:check": "prettier --check backend gateway microservices docker frontend/src frontend/vite.config.mjs frontend/index.html docker-compose*.yml",
-    "format": "prettier --write backend gateway microservices docker frontend/src frontend/vite.config.mjs frontend/index.html docker-compose*.yml"
+    "format": "prettier --write backend gateway microservices docker frontend/src frontend/vite.config.mjs frontend/index.html docker-compose*.yml",
+    "docs": "jsdoc -c jsdoc.json"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "eslint": "^10.14.0",
     "globals": "^17.14.0",
+    "jsdoc": "^4.0.5",
     "npm-run-all2": "^9.0.4",
     "prettier": "^3.9.10"
   },

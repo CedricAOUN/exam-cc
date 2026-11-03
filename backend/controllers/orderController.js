@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const debug = require('debug')('shop:orders');
 const { createHash } = require('node:crypto');
 const Order = require('../models/Order');
 const Product = require('../models/Product');
@@ -13,8 +14,8 @@ const { notify } = require('../utils/notifications');
  * The required `Idempotency-Key` header makes retries safe: replaying the same key
  * with the same payload returns the existing order (200); a different payload is a 409.
  * A confirmation email is sent best-effort after commit.
- * @param {import('express').Request} req Body: `{ items, shippingAddress, paymentMethod, shippingMethod }`.
- * @param {import('express').Response} res 201 (created) or 200 (replayed) with `{ message, order }`.
+ * @param {express.Request} req Body: `{ items, shippingAddress, paymentMethod, shippingMethod }`.
+ * @param {express.Response} res 201 (created) or 200 (replayed) with `{ message, order }`.
  * @returns {Promise<void>}
  */
 exports.createOrder = async (req, res) => {
@@ -23,7 +24,9 @@ exports.createOrder = async (req, res) => {
   const requestHash = createHash('sha256')
     .update(JSON.stringify({ items, shippingAddress, paymentMethod, shippingMethod }))
     .digest('hex');
+  debug('createOrder: %d line(s), method=%s', items.length, shippingMethod);
   const replay = (order) => {
+    debug('createOrder: replayed idempotent request');
     if (order.requestHash !== requestHash)
       throw fail(409, 'Cette clé de commande a déjà été utilisée.');
     return { order, replayed: true };
@@ -86,8 +89,8 @@ exports.createOrder = async (req, res) => {
 /**
  * GET /api/orders: list orders, newest first (max 200).
  * Admins see every order; other users only see their own.
- * @param {import('express').Request} req Requires `authenticateToken`.
- * @param {import('express').Response} res 200 array of orders.
+ * @param {express.Request} req Requires `authenticateToken`.
+ * @param {express.Response} res 200 array of orders.
  * @returns {Promise<void>}
  */
 exports.getOrders = async (req, res) => {
@@ -108,7 +111,7 @@ const transitions = {
  * Enforces ownership (non-admins only touch their own orders and may only cancel
  * while `En attente`), validates the transition, and restores reserved stock
  * exactly once on cancellation.
- * @param {import('express').Request} req Uses `req.params.orderId` and `req.user`.
+ * @param {express.Request} req Uses `req.params.orderId` and `req.user`.
  * @param {string} status Target status.
  * @returns {Promise<{order: object, changed: boolean}>} `changed` is false if already in that status.
  * @throws {Error} With `status` 404, 403 or 409 (see `utils/http.fail`).
@@ -143,8 +146,8 @@ async function changeStatus(req, status) {
 }
 /**
  * Apply a status change, email the order owner if it changed, and reply with the order.
- * @param {import('express').Request} req
- * @param {import('express').Response} res
+ * @param {express.Request} req
+ * @param {express.Response} res
  * @param {string} status Target status.
  * @returns {Promise<void>}
  */
