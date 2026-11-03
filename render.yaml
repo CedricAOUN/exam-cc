@@ -38,7 +38,7 @@ services:
       # Proxy API calls to the backend so the browser sees a single origin.
       - type: rewrite
         source: /api/*
-        destination: https://exam1-backend.onrender.com/api/*
+        destination: https://exam1-backend-1k39.onrender.com/api/*
       # SPA fallback for react-router.
       - type: rewrite
         source: /*
@@ -76,11 +76,11 @@ services:
       - key: JWT_SECRET
         generateValue: true
       - key: GATEWAY_URL
-        value: https://exam1-gateway.onrender.com
+        value: https://exam1-gateway-snux.onrender.com
       - key: COOKIE_SECURE
         value: "true"
       - key: ALLOWED_ORIGINS
-        value: https://exam1-frontend.onrender.com
+        value: https://exam1-frontend-9nrk.onrender.com
       - key: TRUST_PROXY
         value: "1"
       - key: NOTIFICATION_EMAIL
@@ -104,9 +104,9 @@ services:
       - key: GATEWAY_PORT
         value: "10000"
       - key: NOTIFI_SERVICE_URL
-        value: https://exam1-notifications.onrender.com
+        value: https://exam1-notifications-9853.onrender.com
       - key: STOCK_SERVICE_URL
-        value: https://exam1-stock.onrender.com
+        value: https://exam1-stock-ymu9.onrender.com
 
   - type: web
     name: exam1-notifications
