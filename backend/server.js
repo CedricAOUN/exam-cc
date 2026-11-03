@@ -5,6 +5,12 @@ require('dotenv').config();
 const connectDB = require('./config/db');
 
 const app = express();
+
+app.get('/health', (req, res) => {
+  const ready = require('mongoose').connection.readyState === 1;
+  res.status(ready ? 200 : 503).json({ status: ready ? 'ok' : 'unavailable' });
+});
+
 connectDB();
 
 app.use(cors());

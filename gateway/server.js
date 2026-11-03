@@ -9,6 +9,9 @@ dotenv.config();
 
 const app = express();
 
+app.get('/health', (req, res) => res.json({ status: 'ok' }));
+
+
 // Middleware pour analyser les requêtes JSON
 app.use(express.json());
 

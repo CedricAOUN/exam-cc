@@ -1,32 +1,93 @@
-version: '3'
+x-node-healthcheck: &node-healthcheck
+  test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:' + (process.env.PORT || process.env.GATEWAY_PORT || process.env.NOTIFI_PORT || 4003) + '/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+  interval: 10s
+  timeout: 5s
+  retries: 5
+  start_period: 20s
+
 services:
   frontend:
     build: ./frontend
     ports:
-      - '3000:3000'
+      - '3000:80'
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
 
   backend:
     build: ./backend
     ports:
-      - '5000:5000'
+      - '127.0.0.1:5000:5000'
     environment:
-      - MONGO_URI=mongodb://mongo:27017/mydatabase
+      PORT: 5000
+      MONGO_URI: mongodb://mongo:27017/exam1Db
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in the root .env (see .env.example)}
+      GATEWAY_URL: http://gateway:8000
     depends_on:
-      - mongo
+      mongo:
+        condition: service_healthy
+      gateway:
+        condition: service_healthy
+    healthcheck: *node-healthcheck
+    restart: unless-stopped
 
-  mongo:
-    image: mongo
+  gateway:
+    build: ./gateway
     ports:
-      - '27018:27017'
+      - '127.0.0.1:8000:8000'
+    environment:
+      GATEWAY_PORT: 8000
+      NOTIFI_SERVICE_URL: http://notifications:4002
+      STOCK_SERVICE_URL: http://stock-management:4003
+    depends_on:
+      notifications:
+        condition: service_healthy
+      stock-management:
+        condition: service_healthy
+    healthcheck: *node-healthcheck
+    restart: unless-stopped
 
   notifications:
     build: ./microservices/notifications
     ports:
-      - '3001:3001'
+      - '127.0.0.1:4002:4002'
+    environment:
+      NOTIFI_PORT: 4002
+      EMAIL_USER: ${EMAIL_USER:-}
+      EMAIL_APPLICATION_PASSWORD: ${EMAIL_APPLICATION_PASSWORD:-}
+    healthcheck: *node-healthcheck
+    restart: unless-stopped
 
   stock-management:
     build: ./microservices/stock-management
     ports:
-      - '3002:3002'
+      - '127.0.0.1:4003:4003'
+    healthcheck: *node-healthcheck
+    restart: unless-stopped
+
+  mongo:
+    image: mongo:8.0
+    environment:
+      # Use glibc rseq registration to avoid MongoDB's TCMalloc/kernel conflict.
+      # https://github.com/docker-library/mongo/issues/765
+      GLIBC_TUNABLES: glibc.pthread.rseq=1
+    ports:
+      - '127.0.0.1:27018:27017'
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "quit(db.adminCommand('ping').ok ? 0 : 1)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+
+volumes:
+  mongo-data:
